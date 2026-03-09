@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YENES · Systems Map</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Sora:wght@300;400;500;600;700;800;900&display=swap');
+:root{
+  --navy:#060c14;--n2:#0c1220;--n3:#0a0f1a;
+  --teal:#00d4c8;--purple:#a78bfa;--blue:#3b82f6;
+  --amber:#fbbf24;--lime:#c8e032;--green:#22c55e;
+  --slate:#94a3b8;--pink:#f472b6;
+  --w90:rgba(255,255,255,0.90);--w70:rgba(255,255,255,0.70);
+  --w55:rgba(255,255,255,0.55);--w40:rgba(255,255,255,0.40);
+  --w25:rgba(255,255,255,0.25);--w15:rgba(255,255,255,0.15);
+  --w08:rgba(255,255,255,0.08);--w04:rgba(255,255,255,0.04);
+  --bd:rgba(255,255,255,0.07);
+  --cat-core:var(--teal);--cat-di:var(--purple);--cat-crm:var(--blue);
+  --cat-ao:var(--amber);--cat-gtm:var(--lime);--cat-co:var(--green);
+  --cat-inf:var(--slate);--cat-bc:var(--pink);
+  --col-w:180px; --card-gap:5px; --cell-pad:8px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{background:var(--navy);color:#fff;font-family:'Sora',sans-serif;}
+body{min-width:1280px;overflow-x:auto;}
+
+/* ── GRID BACKGROUND ── */
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    linear-gradient(rgba(0,212,200,0.03) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,212,200,0.03) 1px,transparent 1px);
+  background-size:48px 48px;
+}
+
+/* ── STICKY CONTROLS ── */
+#controls{
+  position:sticky;top:0;z-index:200;
+  background:rgba(10,15,26,0.97);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--bd);
+  padding:10px 20px 8px;
+}
+#controls-top{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:8px;
+}
+.ctrl-logo{font-size:13px;font-weight:900;letter-spacing:-0.3px;}
+.ctrl-logo span{color:var(--teal);}
+#count-bar{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--w40);}
+#count-bar .cv{color:var(--teal);font-weight:700;}
+
+#ctrl-rows{display:flex;flex-direction:column;gap:6px;}
+.ctrl-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.ctrl-label{font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--w25);min-width:72px;}
+
+.fbtn{
+  padding:4px 12px;border-radius:4px;border:1px solid var(--w15);
+  background:transparent;color:var(--w55);
+  font-family:'Sora',sans-serif;font-size:10px;font-weight:600;
+  cursor:pointer;transition:all 0.2s;
+}
+.fbtn:hover{background:var(--w04);color:var(--w90);}
+.fbtn.active{color:#fff;border-color:transparent;}
+
+/* Tier filter active colors */
+.fbtn[data-tier="1"].active{background:rgba(0,212,200,0.15);border-color:rgba(0,212,200,0.35);color:var(--teal);}
+.fbtn[data-tier="2"].active{background:rgba(200,224,50,0.12);border-color:rgba(200,224,50,0.3);color:var(--lime);}
+.fbtn[data-tier="3"].active{background:rgba(167,139,250,0.12);border-color:rgba(167,139,250,0.3);color:var(--purple);}
+.fbtn[data-tier="all"].active{background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.2);color:#fff;}
+
+/* Flow buttons */
+.flow-btn[data-flow="execution"].active{background:rgba(0,212,200,0.15);border-color:rgba(0,212,200,0.4);color:var(--teal);}
+.flow-btn[data-flow="intelligence"].active{background:rgba(167,139,250,0.15);border-color:rgba(167,139,250,0.4);color:var(--purple);}
+.flow-btn[data-flow="crm"].active{background:rgba(59,130,246,0.15);border-color:rgba(59,130,246,0.4);color:var(--blue);}
+.flow-btn[data-flow="acquisition"].active{background:rgba(200,224,50,0.12);border-color:rgba(200,224,50,0.4);color:var(--lime);}
+.flow-btn[data-flow="flywheel"].active{background:rgba(251,191,36,0.12);border-color:rgba(251,191,36,0.4);color:var(--amber);}
+
+/* Category filter buttons */
+.cat-btn[data-cat="core-product"].active{background:rgba(0,212,200,0.12);border-color:rgba(0,212,200,0.35);color:var(--teal);}
+.cat-btn[data-cat="data-intelligence"].active{background:rgba(167,139,250,0.12);border-color:rgba(167,139,250,0.35);color:var(--purple);}
+.cat-btn[data-cat="crm-integration"].active{background:rgba(59,130,246,0.12);border-color:rgba(59,130,246,0.35);color:var(--blue);}
+.cat-btn[data-cat="automation"].active{background:rgba(251,191,36,0.10);border-color:rgba(251,191,36,0.35);color:var(--amber);}
+.cat-btn[data-cat="sales-gtm"].active{background:rgba(200,224,50,0.10);border-color:rgba(200,224,50,0.35);color:var(--lime);}
+.cat-btn[data-cat="customer-ops"].active{background:rgba(34,197,94,0.10);border-color:rgba(34,197,94,0.35);color:var(--green);}
+.cat-btn[data-cat="company-infra"].active{background:rgba(148,163,184,0.10);border-color:rgba(148,163,184,0.35);color:var(--slate);}
+.cat-btn[data-cat="brand-content"].active{background:rgba(244,114,182,0.10);border-color:rgba(244,114,182,0.35);color:var(--pink);}
+
+/* ── MAIN GRID ── */
+#grid-wrap{
+  position:relative;
+  padding:0 20px 60px;
+  overflow:visible;
+}
+
+#col-headers{
+  display:grid;
+  grid-template-columns:80px repeat(8,1fr);
+  padding:10px 0 6px;
+  position:sticky;top:var(--ctrl-h,120px);
+  background:rgba(6,12,20,0.95);
+  z-index:100;border-bottom:1px solid var(--bd);
+}
+.col-header-spacer{}
+.col-header{
+  font-size:10px;font-weight:700;color:var(--w70);
+  text-transform:uppercase;letter-spacing:1.5px;
+  padding:4px 6px;text-align:center;
+  border-left:1px solid var(--bd);
+  transition:color 0.2s;
+}
+
+#map-grid{
+  display:flex;flex-direction:column;gap:0;
+  position:relative;
+}
+
+/* SVG OVERLAY */
+#svg-overlay{
+  position:absolute;inset:0;
+  pointer-events:none;
+  z-index:1;
+  overflow:visible;
+}
+
+/* ── TIER ROW ── */
+.tier-row{
+  display:grid;
+  grid-template-columns:80px repeat(8,1fr);
+  border-top:1px solid var(--w08);
+  position:relative;
+}
+.tier-label-cell{
+  display:flex;flex-direction:column;justify-content:center;
+  padding:16px 6px 16px 0;
+  position:sticky;left:0;
+  background:rgba(6,12,20,0.9);
+  z-index:50;
+  border-right:1px solid var(--bd);
+}
+.tier-label-num{font-size:18px;font-weight:900;color:var(--w90);letter-spacing:-1px;line-height:1;}
+.tier-label-name{font-size:8px;font-weight:800;color:var(--teal);text-transform:uppercase;letter-spacing:2px;margin-top:3px;}
+.tier-label-sub{font-size:8px;font-weight:400;color:var(--w25);margin-top:4px;line-height:1.3;}
+
+/* Tier backgrounds */
+.tier-row[data-tier="1"]{background:rgba(0,212,200,0.012);}
+.tier-row[data-tier="2"]{background:rgba(200,224,50,0.008);}
+.tier-row[data-tier="3"]{background:rgba(167,139,250,0.008);}
+
+/* ── CATEGORY CELL ── */
+.cat-cell{
+  padding:var(--cell-pad);
+  border-left:1px solid var(--bd);
+  display:flex;flex-direction:column;gap:var(--card-gap);
+  vertical-align:top;
+  min-height:60px;
+  transition:background 0.2s;
+}
+.cat-cell.dimmed{opacity:0.25;}
+
+/* ── SYSTEM CARD ── */
+.sys-card{
+  background:var(--n2);
+  border:1px solid var(--bd);
+  border-left:3px solid;
+  border-radius:6px;
+  padding:7px 8px 6px;
+  cursor:pointer;
+  position:relative;
+  z-index:10;
+  transition:all 0.2s ease;
+  overflow:hidden;
+}
+.sys-card:hover{z-index:20;transform:scale(1.01);}
+.sys-card.highlighted{z-index:30;}
+.sys-card.dimmed-card{opacity:0.18;}
+
+.card-top{display:flex;align-items:center;gap:5px;}
+.card-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.card-name{font-size:11px;font-weight:600;color:var(--w90);flex:1;line-height:1.25;}
+.card-badge{
+  font-family:'JetBrains Mono',monospace;font-size:7.5px;font-weight:700;
+  padding:1px 5px;border-radius:3px;border:1px solid;
+  flex-shrink:0;
+}
+
+.card-desc{
+  font-size:9.5px;font-weight:400;color:var(--w55);line-height:1.4;
+  margin-top:5px;
+  max-height:0;overflow:hidden;
+  transition:max-height 0.22s ease;
+}
+.sys-card:hover .card-desc{max-height:100px;}
+
+.card-footer{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-top:5px;
+  max-height:0;overflow:hidden;
+  transition:max-height 0.22s ease;
+}
+.sys-card:hover .card-footer{max-height:30px;}
+.card-cat-label{font-family:'JetBrains Mono',monospace;font-size:7px;font-weight:600;text-transform:uppercase;letter-spacing:1px;}
+.card-id{font-family:'JetBrains Mono',monospace;font-size:7px;color:var(--w25);}
+
+/* Category color maps */
+.cat-core-product  .sys-card{border-left-color:rgba(0,212,200,0.45);}
+.cat-data-intelligence .sys-card{border-left-color:rgba(167,139,250,0.45);}
+.cat-crm-integration .sys-card{border-left-color:rgba(59,130,246,0.45);}
+.cat-automation .sys-card{border-left-color:rgba(251,191,36,0.45);}
+.cat-sales-gtm .sys-card{border-left-color:rgba(200,224,50,0.45);}
+.cat-customer-ops .sys-card{border-left-color:rgba(34,197,94,0.45);}
+.cat-company-infra .sys-card{border-left-color:rgba(148,163,184,0.45);}
+.cat-brand-content .sys-card{border-left-color:rgba(244,114,182,0.45);}
+
+.cat-core-product  .sys-card:hover{border-color:rgba(0,212,200,0.4);box-shadow:0 0 14px rgba(0,212,200,0.12);}
+.cat-data-intelligence .sys-card:hover{border-color:rgba(167,139,250,0.4);box-shadow:0 0 14px rgba(167,139,250,0.12);}
+.cat-crm-integration .sys-card:hover{border-color:rgba(59,130,246,0.4);box-shadow:0 0 14px rgba(59,130,246,0.12);}
+.cat-automation .sys-card:hover{border-color:rgba(251,191,36,0.35);box-shadow:0 0 14px rgba(251,191,36,0.10);}
+.cat-sales-gtm .sys-card:hover{border-color:rgba(200,224,50,0.35);box-shadow:0 0 14px rgba(200,224,50,0.10);}
+.cat-customer-ops .sys-card:hover{border-color:rgba(34,197,94,0.35);box-shadow:0 0 14px rgba(34,197,94,0.10);}
+.cat-company-infra .sys-card:hover{border-color:rgba(148,163,184,0.35);box-shadow:0 0 14px rgba(148,163,184,0.10);}
+.cat-brand-content .sys-card:hover{border-color:rgba(244,114,182,0.35);box-shadow:0 0 14px rgba(244,114,182,0.10);}
+
+.sys-card.highlighted.cat-core-product-hl{border-color:rgba(0,212,200,0.7)!important;box-shadow:0 0 20px rgba(0,212,200,0.2)!important;}
+.sys-card.highlighted.cat-data-intelligence-hl{border-color:rgba(167,139,250,0.7)!important;box-shadow:0 0 20px rgba(167,139,250,0.2)!important;}
+.sys-card.highlighted.cat-crm-integration-hl{border-color:rgba(59,130,246,0.7)!important;box-shadow:0 0 20px rgba(59,130,246,0.2)!important;}
+.sys-card.highlighted.cat-automation-hl{border-color:rgba(251,191,36,0.7)!important;box-shadow:0 0 20px rgba(251,191,36,0.18)!important;}
+.sys-card.highlighted.cat-sales-gtm-hl{border-color:rgba(200,224,50,0.65)!important;box-shadow:0 0 20px rgba(200,224,50,0.18)!important;}
+.sys-card.highlighted.cat-customer-ops-hl{border-color:rgba(34,197,94,0.65)!important;box-shadow:0 0 20px rgba(34,197,94,0.15)!important;}
+.sys-card.highlighted.cat-company-infra-hl{border-color:rgba(148,163,184,0.65)!important;box-shadow:0 0 20px rgba(148,163,184,0.15)!important;}
+.sys-card.highlighted.cat-brand-content-hl{border-color:rgba(244,114,182,0.65)!important;box-shadow:0 0 20px rgba(244,114,182,0.15)!important;}
+
+/* Badge colors */
+.badge-t1{background:rgba(0,212,200,0.12);border-color:rgba(0,212,200,0.25);color:rgba(0,212,200,0.8);}
+.badge-t2{background:rgba(200,224,50,0.10);border-color:rgba(200,224,50,0.22);color:rgba(200,224,50,0.8);}
+.badge-t3{background:rgba(167,139,250,0.10);border-color:rgba(167,139,250,0.22);color:rgba(167,139,250,0.8);}
+
+/* Dot colors */
+.dot-core{background:var(--teal);}
+.dot-di{background:var(--purple);}
+.dot-crm{background:var(--blue);}
+.dot-ao{background:var(--amber);}
+.dot-gtm{background:var(--lime);}
+.dot-co{background:var(--green);}
+.dot-inf{background:var(--slate);}
+.dot-bc{background:var(--pink);}
+
+/* SVG connector lines */
+.flow-line{
+  stroke-dasharray:6 4;
+  animation:flow-anim 2.5s linear infinite;
+  opacity:0.14;
+  stroke-width:1.5;
+  fill:none;
+  transition:opacity 0.3s;
+}
+.flow-line.active-flow{opacity:0.65;stroke-width:2;}
+@keyframes flow-anim{from{stroke-dashoffset:20}to{stroke-dashoffset:0}}
+
+/* Empty cell indicator */
+.cell-empty{
+  display:flex;align-items:center;justify-content:center;
+  height:100%;min-height:40px;
+  font-size:8px;color:var(--w15);font-family:'JetBrains Mono',monospace;
+}
+
+/* Tooltip */
+#tooltip{
+  position:fixed;z-index:999;pointer-events:none;
+  background:rgba(10,15,26,0.97);border:1px solid var(--bd);
+  border-radius:8px;padding:8px 12px;
+  font-size:10px;color:var(--w70);max-width:240px;
+  display:none;
+}
+</style>
+</head>
+<body>
+
+<div id="tooltip"></div>
+
+<!-- ── CONTROLS ── -->
+<div id="controls">
+  <div id="controls-top">
+    <div class="ctrl-logo">YENES <span>·</span> Oper8er <span style="color:var(--w25);font-weight:400;font-size:11px;margin-left:6px;">Systems Map</span></div>
+    <div id="count-bar"></div>
+  </div>
+  <div id="ctrl-rows">
+    <div class="ctrl-row">
+      <div class="ctrl-label">Tier</div>
+      <button class="fbtn active" data-tier="all">All Systems</button>
+      <button class="fbtn" data-tier="1">Tier 1 · MVP</button>
+      <button class="fbtn" data-tier="2">Tier 2 · Paid Client</button>
+      <button class="fbtn" data-tier="3">Tier 3 · Scaling</button>
+    </div>
+    <div class="ctrl-row">
+      <div class="ctrl-label">Category</div>
+      <button class="fbtn cat-btn" data-cat="core-product">Core Product</button>
+      <button class="fbtn cat-btn" data-cat="data-intelligence">Data &amp; Intelligence</button>
+      <button class="fbtn cat-btn" data-cat="crm-integration">CRM Integration</button>
+      <button class="fbtn cat-btn" data-cat="automation">Automation</button>
+      <button class="fbtn cat-btn" data-cat="sales-gtm">Sales &amp; GTM</button>
+      <button class="fbtn cat-btn" data-cat="customer-ops">Customer Ops</button>
+      <button class="fbtn cat-btn" data-cat="company-infra">Company Infra</button>
+      <button class="fbtn cat-btn" data-cat="brand-content">Brand &amp; Content</button>
+    </div>
+    <div class="ctrl-row">
+      <div class="ctrl-label">Flow</div>
+      <button class="fbtn flow-btn" data-flow="execution">⚡ Execution Pipeline</button>
+      <button class="fbtn flow-btn" data-flow="intelligence">📊 Intelligence Pipeline</button>
+      <button class="fbtn flow-btn" data-flow="crm">🔄 CRM Data Flow</button>
+      <button class="fbtn flow-btn" data-flow="acquisition">🎯 Acquisition Pipeline</button>
+      <button class="fbtn flow-btn" data-flow="flywheel">♾ Data Flywheel</button>
+      <button class="fbtn" id="clear-flow" style="margin-left:8px;opacity:0.5;">✕ Clear</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MAIN GRID ── -->
+<div id="grid-wrap">
+  <div id="col-headers">
+    <div class="col-header-spacer"></div>
+    <div class="col-header" data-col="core-product">Core Product</div>
+    <div class="col-header" data-col="data-intelligence">Data &amp; Intelligence</div>
+    <div class="col-header" data-col="crm-integration">CRM Integration</div>
+    <div class="col-header" data-col="automation">Automation &amp; Orch.</div>
+    <div class="col-header" data-col="sales-gtm">Sales &amp; GTM</div>
+    <div class="col-header" data-col="customer-ops">Customer Operations</div>
+    <div class="col-header" data-col="company-infra">Company Infra</div>
+    <div class="col-header" data-col="brand-content">Brand &amp; Content</div>
+  </div>
+  <div id="map-grid">
+    <svg id="svg-overlay"></svg>
+    <!-- Rows injected by JS -->
+  </div>
+</div>
+
+<script>
+// ── DATA ──
+const CATS = ['core-product','data-intelligence','crm-integration','automation','sales-gtm','customer-ops','company-infra','brand-content'];
+const CAT_LABELS = {'core-product':'Core Product','data-intelligence':'Data & Intelligence','crm-integration':'CRM Integration','automation':'Automation','sales-gtm':'Sales & GTM','customer-ops':'Customer Ops','company-infra':'Company Infra','brand-content':'Brand & Content'};
+const CAT_COLORS = {'core-product':'var(--teal)','data-intelligence':'var(--purple)','crm-integration':'var(--blue)','automation':'var(--amber)','sales-gtm':'var(--lime)','customer-ops':'var(--green)','company-infra':'var(--slate)','brand-content':'var(--pink)'};
+const CAT_RGBS = {'core-product':'0,212,200','data-intelligence':'167,139,250','crm-integration':'59,130,246','automation':'251,191,36','sales-gtm':'200,224,50','customer-ops':'34,197,94','company-infra':'148,163,184','brand-content':'244,114,182'};
+const CAT_DOT = {'core-product':'dot-core','data-intelligence':'dot-di','crm-integration':'dot-crm','automation':'dot-ao','sales-gtm':'dot-gtm','customer-ops':'dot-co','company-infra':'dot-inf','brand-content':'dot-bc'};
+
+const systems = [
+  // TIER 1 — CORE PRODUCT
+  {id:'T1-CP-01',name:'Message Ingestion',desc:'Receives inbound customer messages from connected channel, normalizes to internal format',tier:1,cat:'core-product',up:[],dn:['T1-CP-02']},
+  {id:'T1-CP-02',name:'Intent Detection',desc:'Analyzes messages for conversation stage, friction signals, scheduling readiness, engagement level',tier:1,cat:'core-product',up:['T1-CP-01'],dn:['T1-CP-03']},
+  {id:'T1-CP-03',name:'Engine Router',desc:'Selects and activates the correct execution engine based on signal analysis and priority hierarchy',tier:1,cat:'core-product',up:['T1-CP-02'],dn:['T1-CP-04','T1-CP-05','T1-CP-06','T1-CP-07']},
+  {id:'T1-CP-04',name:'Appointment Engine',desc:'Converts vague scheduling interest into confirmed time-specific commitments',tier:1,cat:'core-product',up:['T1-CP-03'],dn:['T1-CP-09']},
+  {id:'T1-CP-05',name:'Objection Engine',desc:'Maintains deal momentum through customer friction via acknowledge-reframe-redirect',tier:1,cat:'core-product',up:['T1-CP-03'],dn:['T1-CP-09']},
+  {id:'T1-CP-06',name:'Follow-Up Engine',desc:'Imposes structured 5-tier cadence on silent leads based on time-based triggers',tier:1,cat:'core-product',up:['T1-CP-03'],dn:['T1-CP-09']},
+  {id:'T1-CP-07',name:'Pricing Guardrail Engine',desc:'Prevents margin erosion by maintaining pricing position and redirecting to value',tier:1,cat:'core-product',up:['T1-CP-03'],dn:['T1-CP-09']},
+  {id:'T1-CP-08',name:'Automotive Vertical Module',desc:'Industry-specific conversation logic, objection taxonomy, CRM mappings for automotive',tier:1,cat:'core-product',up:[],dn:['T1-CP-09']},
+  {id:'T1-CP-09',name:'Response Generation',desc:'Constructs engine prompts with context, sends to AI model, returns structured guidance',tier:1,cat:'core-product',up:['T1-CP-04','T1-CP-05','T1-CP-06','T1-CP-07'],dn:['T1-CP-10']},
+  {id:'T1-CP-10',name:'Automation Cascade',desc:'Fires CRM note, deal update, follow-up scheduling, and telemetry recording on every send',tier:1,cat:'core-product',up:['T1-CP-09'],dn:['T1-CP-11','T1-CP-12','T1-CP-13','T1-DI-01']},
+  {id:'T1-CP-11',name:'CRM Note Generator',desc:'Produces structured 5-field notes (Stage, Trigger, Position, Next Step, Timeline)',tier:1,cat:'core-product',up:['T1-CP-10'],dn:['T1-CI-01']},
+  {id:'T1-CP-12',name:'Follow-Up Queue',desc:'Manages all scheduled follow-up actions, surfaces due items, tracks compliance',tier:1,cat:'core-product',up:['T1-CP-10'],dn:[]},
+  {id:'T1-CP-13',name:'Deal Tracking (Basic)',desc:'Maintains deal records with stage, engine history, and basic status',tier:1,cat:'core-product',up:['T1-CP-10'],dn:[]},
+  {id:'T1-CP-14',name:'Rep Console (Minimal)',desc:'Working interface for reps: messages, guided responses, follow-up queue',tier:1,cat:'core-product',up:[],dn:[]},
+  {id:'T1-CP-15',name:'Authentication (Basic)',desc:'Username/password login for rep and admin users',tier:1,cat:'core-product',up:[],dn:[]},
+  // TIER 1 — DATA & INTELLIGENCE
+  {id:'T1-DI-01',name:'Telemetry Event System',desc:'Captures structured behavioral execution events on every interaction',tier:1,cat:'data-intelligence',up:['T1-CP-10'],dn:['T2-DI-01']},
+  {id:'T1-DI-02',name:'Database (PostgreSQL)',desc:'Core data store: leads, conversations, messages, events, deals, users',tier:1,cat:'data-intelligence',up:[],dn:[]},
+  {id:'T1-DI-03',name:'Application Logging',desc:'Structured logs for API requests, engine activations, sync operations, errors',tier:1,cat:'data-intelligence',up:[],dn:[]},
+  // TIER 1 — CRM INTEGRATION
+  {id:'T1-CI-01',name:'CRM Connector (Pilot)',desc:'Single connector for pilot customer\'s CRM: lead ingestion, message sync, note push, stage sync',tier:1,cat:'crm-integration',up:['T1-CP-11'],dn:['T1-CP-01']},
+  // TIER 1 — INFRASTRUCTURE
+  {id:'T1-IN-01',name:'Backend Server',desc:'Application server hosting all core logic, API endpoints, background jobs',tier:1,cat:'company-infra',up:[],dn:[]},
+  {id:'T1-IN-02',name:'API Layer (Basic)',desc:'REST endpoints serving Rep Console and receiving CRM webhooks',tier:1,cat:'company-infra',up:[],dn:[]},
+  {id:'T1-IN-03',name:'Hosting & Deployment',desc:'Cloud hosting with SSL, basic monitoring',tier:1,cat:'company-infra',up:[],dn:[]},
+  // TIER 1 — AI TOOLING
+  {id:'T1-AI-01',name:'AI Model API',desc:'Production connection to Claude/GPT API for response generation',tier:1,cat:'core-product',up:[],dn:['T1-CP-09']},
+
+  // TIER 2 — CORE PRODUCT
+  {id:'T2-CP-01',name:'Qualification Engine',desc:'Captures missing deal qualification data through embedded conversational questions',tier:2,cat:'core-product',up:['T1-CP-03'],dn:['T1-CP-09']},
+  {id:'T2-CP-02',name:'Lead Recovery Engine',desc:'Re-engages dormant leads (30+ days) through new-information and value-delivery approaches',tier:2,cat:'core-product',up:[],dn:['T1-CP-09']},
+  {id:'T2-CP-03',name:'Cascade (Fully Automated)',desc:'All four cascade outputs hardened: no manual steps, consistent on every interaction',tier:2,cat:'core-product',up:['T1-CP-10'],dn:[]},
+  {id:'T2-CP-04',name:'Deal Tracking (Full)',desc:'Automated stage progression, momentum score integration, autopsy triggering',tier:2,cat:'core-product',up:['T1-CP-13'],dn:['T2-DI-01']},
+  {id:'T2-CP-05',name:'Error Handling & Recovery',desc:'CRM sync retries, API timeout fallbacks, graceful failure for all production paths',tier:2,cat:'core-product',up:[],dn:[]},
+  {id:'T2-CP-06',name:'Admin Panel (Basic)',desc:'Customer admin: manage users, view system status, adjust cadence settings',tier:2,cat:'core-product',up:[],dn:[]},
+  {id:'T2-CP-07',name:'Manager Dashboard (Core)',desc:'Deal Momentum Scores, pipeline health overview, basic rep execution metrics',tier:2,cat:'core-product',up:['T2-DI-01','T2-DI-02','T2-DI-03'],dn:[]},
+  // TIER 2 — DATA & INTELLIGENCE
+  {id:'T2-DI-01',name:'Deal Momentum Score',desc:'0–100 behavioral health score from 7 weighted signal categories, classification, trajectory',tier:2,cat:'data-intelligence',up:['T1-DI-01'],dn:['T2-DI-02','T2-CP-07']},
+  {id:'T2-DI-02',name:'Deal Autopsy (Basic)',desc:'Timeline reconstruction, primary failure identification, structured report for lost deals',tier:2,cat:'data-intelligence',up:['T2-DI-01'],dn:['T2-CP-07']},
+  {id:'T2-DI-03',name:'Alert System (Basic)',desc:'Critical deal momentum drops and follow-up compliance collapse alerts via dashboard + email',tier:2,cat:'data-intelligence',up:['T2-DI-01'],dn:['T2-CP-07']},
+  // TIER 2 — CRM INTEGRATION
+  {id:'T2-CI-01',name:'CRM Connector (Hardened)',desc:'Field mapping validation, error handling, retry logic, sync state management',tier:2,cat:'crm-integration',up:['T1-CI-01'],dn:[]},
+  {id:'T2-CI-02',name:'Webhook Ingestion',desc:'Real-time event processing from CRM: new leads, messages, stage changes',tier:2,cat:'crm-integration',up:[],dn:['T1-CP-01']},
+  // TIER 2 — SALES & GTM
+  {id:'T2-SG-01',name:'Audit Backend (Basic)',desc:'CRM read-only connection, 30-day data collection, metric calculation, semi-manual report',tier:2,cat:'sales-gtm',up:[],dn:['T2-SG-03']},
+  {id:'T2-SG-02',name:'Yenes Internal CRM',desc:'Company pipeline tracking: audit prospects, deployment pipeline, customer accounts',tier:2,cat:'sales-gtm',up:[],dn:[]},
+  {id:'T2-SG-03',name:'Proposal & Agreement Flow',desc:'Customer agreement template, pricing proposal, e-signature (DocuSign/PandaDoc)',tier:2,cat:'sales-gtm',up:['T2-SG-01'],dn:['T2-CO-01']},
+  {id:'T2-SG-04',name:'Scheduling Tool',desc:'Calendly/Cal.com for audit review calls, demo sessions, onboarding meetings',tier:2,cat:'sales-gtm',up:[],dn:[]},
+  {id:'T2-SG-05',name:'Landing Page (Deployed)',desc:'V5 product page on production domain, publicly accessible, audit CTA live',tier:2,cat:'sales-gtm',up:[],dn:['T2-SG-01']},
+  {id:'T2-SG-06',name:'Demo Environment (Deployed)',desc:'Interactive demo at accessible URL for sales conversations',tier:2,cat:'sales-gtm',up:[],dn:[]},
+  {id:'T2-SG-07',name:'Case Study (Pilot)',desc:'Structured case study from MVP deployment: problem, metrics, outcome',tier:2,cat:'sales-gtm',up:[],dn:[]},
+  // TIER 2 — CUSTOMER OPERATIONS
+  {id:'T2-CO-01',name:'Onboarding Workflow',desc:'Documented repeatable process: CRM connection, validation, user setup, training, go-live',tier:2,cat:'customer-ops',up:['T2-SG-03'],dn:['T2-CO-02']},
+  {id:'T2-CO-02',name:'CRM Integration Onboarding',desc:'Technical onboarding: credentials, field mapping, data validation, sync verification',tier:2,cat:'customer-ops',up:['T2-CO-01'],dn:['T1-CI-01']},
+  {id:'T2-CO-03',name:'Training Materials (Basic)',desc:'Rep quick-start guide, manager dashboard orientation (docs or video)',tier:2,cat:'customer-ops',up:[],dn:[]},
+  {id:'T2-CO-04',name:'Customer Support (Basic)',desc:'Dedicated support email, same-day response SLA, basic issue tracking',tier:2,cat:'customer-ops',up:[],dn:[]},
+  // TIER 2 — COMPANY INFRASTRUCTURE
+  {id:'T2-IF-01',name:'Domain & Professional Email',desc:'Company domain configured, SPF/DKIM/DMARC, professional email operational',tier:2,cat:'company-infra',up:[],dn:[]},
+  {id:'T2-IF-02',name:'Google Workspace',desc:'Email hosting, calendar, document storage, file sharing',tier:2,cat:'company-infra',up:[],dn:[]},
+  {id:'T2-IF-03',name:'Password Manager',desc:'All company accounts secured, credential sharing managed',tier:2,cat:'company-infra',up:[],dn:[]},
+  {id:'T2-IF-04',name:'Financial Tracking (Basic)',desc:'Revenue, expenses, billing status tracked',tier:2,cat:'company-infra',up:[],dn:[]},
+  {id:'T2-IF-05',name:'Stripe Billing',desc:'4-week cycles, annual prepay, waived fee logic, payment failure handling',tier:2,cat:'company-infra',up:[],dn:[]},
+  {id:'T2-IF-06',name:'Terms of Service',desc:'Product usage terms, data handling, liability, cancellation',tier:2,cat:'company-infra',up:[],dn:[]},
+  {id:'T2-IF-07',name:'Privacy Policy',desc:'Data collection, storage, usage, retention, customer rights',tier:2,cat:'company-infra',up:[],dn:[]},
+  {id:'T2-IF-08',name:'Customer Service Agreement',desc:'Contract: pricing, billing, commitment, SLA, cancellation, data terms',tier:2,cat:'company-infra',up:[],dn:[]},
+  // TIER 2 — BRAND & CONTENT
+  {id:'T2-BC-01',name:'CRM Architecture Diagram',desc:'Executive positioning visual: system of record vs. system of execution',tier:2,cat:'brand-content',up:[],dn:[]},
+
+  // TIER 3 — CORE PRODUCT
+  {id:'T3-CP-01',name:'Admin Panel (Full)',desc:'Vertical selection, CRM management, cadence customization, multi-location hierarchy',tier:3,cat:'core-product',up:['T2-CP-06'],dn:[]},
+  {id:'T3-CP-02',name:'Auth & Permissions (Full)',desc:'SSO, role-based access (rep/manager/admin/group), MFA, multi-location isolation',tier:3,cat:'core-product',up:['T1-CP-15'],dn:[]},
+  {id:'T3-CP-03',name:'Mobile Interfaces',desc:'Rep Console and Manager Dashboard functional on mobile devices',tier:3,cat:'core-product',up:[],dn:[]},
+  {id:'T3-CP-04',name:'Second Vertical Module',desc:'Solar or Insurance: industry-specific logic, objections, CRM connectors, compliance',tier:3,cat:'core-product',up:['T1-CP-08'],dn:[]},
+  {id:'T3-CP-05',name:'Third Vertical Module',desc:'Validates the pattern: three verticals on one platform',tier:3,cat:'core-product',up:['T3-CP-04'],dn:[]},
+  // TIER 3 — DATA & INTELLIGENCE
+  {id:'T3-DI-01',name:'Rep Execution Rankings',desc:'6 execution dimensions, volume normalization, 30-day rolling window, coaching indicators',tier:3,cat:'data-intelligence',up:['T1-DI-01'],dn:[]},
+  {id:'T3-DI-02',name:'Pipeline Health Aggregator',desc:'PMI, Concentration Risk, Decay Rate, Stalled %, Stage Distribution — hourly recalc',tier:3,cat:'data-intelligence',up:['T1-DI-01'],dn:[]},
+  {id:'T3-DI-03',name:'Failure Pattern Detection',desc:'5 organizational patterns: response degradation, follow-up breakdown, objection regression, bottleneck, loss cluster',tier:3,cat:'data-intelligence',up:['T1-DI-01'],dn:['T1-CP-09']},
+  {id:'T3-DI-04',name:'Benchmark Network',desc:'Anonymous cross-deployment benchmarks. Requires ~50 regional / ~200 national deployments',tier:3,cat:'data-intelligence',up:['T1-DI-01'],dn:[]},
+  {id:'T3-DI-05',name:'Deal Autopsy (Full)',desc:'Comparison model, aggregate failure linkage, predictive feedback loop to Conversation Layer',tier:3,cat:'data-intelligence',up:['T2-DI-02'],dn:['T1-CP-09']},
+  {id:'T3-DI-06',name:'Alert System (Full)',desc:'All 6 trigger categories, push notifications, frequency controls, lifecycle management',tier:3,cat:'data-intelligence',up:['T2-DI-03'],dn:[]},
+  {id:'T3-DI-07',name:'Data Warehouse',desc:'Analytical store separate from transactional DB for complex aggregation and historical analysis',tier:3,cat:'data-intelligence',up:['T1-DI-02'],dn:[]},
+  {id:'T3-DI-08',name:'Data Pipelines',desc:'ETL/ELT processes, event stream processing, batch intelligence computation',tier:3,cat:'data-intelligence',up:[],dn:[]},
+  {id:'T3-DI-09',name:'Data Retention & Archival',desc:'Lifecycle policies: retention periods, archival system, historical access',tier:3,cat:'data-intelligence',up:[],dn:[]},
+  // TIER 3 — CRM INTEGRATION
+  {id:'T3-CI-01',name:'Multi-CRM Connectors',desc:'3–5 CRM connectors for target market (VinSolutions, DealerSocket, Elead, Wealthbox, Salesforce)',tier:3,cat:'crm-integration',up:['T2-CI-01'],dn:[]},
+  {id:'T3-CI-02',name:'Calendar Integration',desc:'Google Calendar + Outlook connectors for Appointment Engine availability and entry creation',tier:3,cat:'crm-integration',up:[],dn:['T1-CP-04']},
+  {id:'T3-CI-03',name:'Integration Monitoring',desc:'Dashboard: sync status per deployment, error rates, latency, failed syncs',tier:3,cat:'crm-integration',up:[],dn:[]},
+  {id:'T3-CI-04',name:'Self-Service CRM Connection',desc:'Customer-facing guided setup flow for CRM authorization and configuration',tier:3,cat:'crm-integration',up:[],dn:[]},
+  // TIER 3 — AUTOMATION
+  {id:'T3-AO-01',name:'n8n (Internal Ops)',desc:'Lead routing, onboarding automation, billing events, internal notifications',tier:3,cat:'automation',up:[],dn:[]},
+  {id:'T3-AO-02',name:'Transactional Email',desc:'Automated sending: appointment confirmations, audit delivery, onboarding, alerts, billing',tier:3,cat:'automation',up:[],dn:[]},
+  {id:'T3-AO-03',name:'Automated Onboarding',desc:'Self-service CRM connection, auto data validation, user provisioning, training delivery',tier:3,cat:'automation',up:['T2-CO-01'],dn:[]},
+  {id:'T3-AO-04',name:'Automated Client Reporting',desc:'Quarterly execution reviews generated from Intelligence Layer data',tier:3,cat:'automation',up:['T3-DI-01'],dn:[]},
+  // TIER 3 — SALES & GTM
+  {id:'T3-SG-01',name:'Outbound Email Infrastructure',desc:'Domain-authenticated sending, SPF/DKIM/DMARC, sequence tooling (Instantly/Lemlist)',tier:3,cat:'sales-gtm',up:[],dn:[]},
+  {id:'T3-SG-02',name:'Content Marketing System',desc:'Blog, LinkedIn, industry reports, publishing cadence, authority building',tier:3,cat:'sales-gtm',up:[],dn:[]},
+  {id:'T3-SG-03',name:'Multiple Case Studies',desc:'3–5 case studies across dealership profiles with behavioral improvement metrics',tier:3,cat:'sales-gtm',up:['T2-SG-07'],dn:[]},
+  {id:'T3-SG-04',name:'Referral System',desc:'Structured referral mechanism with tracking, incentives, 20-group/association networks',tier:3,cat:'sales-gtm',up:[],dn:[]},
+  {id:'T3-SG-05',name:'Partner Channel',desc:'Partner materials, co-branded pages, referral tracking, CRM vendor partnerships',tier:3,cat:'sales-gtm',up:[],dn:[]},
+  {id:'T3-SG-06',name:'Published Benchmark Report',desc:'Industry execution report from anonymized aggregate data — category authority asset',tier:3,cat:'sales-gtm',up:['T3-DI-04'],dn:[]},
+  // TIER 3 — CUSTOMER OPERATIONS
+  {id:'T3-CO-01',name:'Support Platform (Scaled)',desc:'Helpdesk (Intercom/Help Scout), knowledge base, support tiers, escalation paths',tier:3,cat:'customer-ops',up:['T2-CO-04'],dn:[]},
+  {id:'T3-CO-02',name:'Customer Success System',desc:'Proactive health monitoring, account management workflow, expansion identification',tier:3,cat:'customer-ops',up:[],dn:[]},
+  {id:'T3-CO-03',name:'Renewal & Expansion Automation',desc:'Automated renewal processing, tier threshold detection, upsell offer triggers',tier:3,cat:'customer-ops',up:[],dn:[]},
+  // TIER 3 — COMPANY INFRASTRUCTURE
+  {id:'T3-IF-01',name:'Accounting System',desc:'QuickBooks/Xero: revenue recognition, expense tracking, tax prep, financial reporting',tier:3,cat:'company-infra',up:[],dn:[]},
+  {id:'T3-IF-02',name:'Legal Infrastructure (Expanded)',desc:'DPA template, industry compliance docs, employment/contractor agreements',tier:3,cat:'company-infra',up:[],dn:[]},
+  {id:'T3-IF-03',name:'Security Documentation',desc:'Formal security posture, data handling procedures, incident response plan, SOC 2 prep',tier:3,cat:'company-infra',up:[],dn:[]},
+  {id:'T3-IF-04',name:'Project Management (Scaled)',desc:'Linear/Notion: sprint planning, bug tracking, feature requests, operational tasks',tier:3,cat:'company-infra',up:[],dn:[]},
+  {id:'T3-IF-05',name:'Internal Analytics',desc:'Website analytics, funnel tracking, CAC, LTV, churn analysis',tier:3,cat:'company-infra',up:[],dn:[]},
+  // TIER 3 — BRAND & CONTENT
+  {id:'T3-BC-01',name:'Company Website',desc:'Yenes company site: mission, product portfolio, team, careers, press',tier:3,cat:'brand-content',up:[],dn:[]},
+  {id:'T3-BC-02',name:'Design System Documentation',desc:'Standalone codified reference: tokens, typography, components, usage guidelines',tier:3,cat:'brand-content',up:[],dn:[]},
+  {id:'T3-BC-03',name:'Messaging Hierarchy Document',desc:'Consolidated positioning, elevator pitches, value props by persona, FAQ, objection handling',tier:3,cat:'brand-content',up:[],dn:[]},
+  {id:'T3-BC-04',name:'Founder Narrative Assets',desc:'LinkedIn strategy, speaking materials, podcast talking points, media bio',tier:3,cat:'brand-content',up:[],dn:[]},
+];
+
+const flows = {
+  execution:{color:'0,212,200',ids:['T1-CP-01','T1-CP-02','T1-CP-03','T1-CP-04','T1-CP-05','T1-CP-06','T1-CP-07','T1-CP-09','T1-CP-10','T1-CP-11','T1-CI-01','T1-CP-12','T1-CP-13','T1-DI-01']},
+  intelligence:{color:'167,139,250',ids:['T1-DI-01','T2-DI-01','T2-DI-02','T2-DI-03','T2-CP-07','T3-DI-01','T3-DI-02','T3-DI-03','T3-DI-04','T3-DI-05','T3-DI-06']},
+  crm:{color:'59,130,246',ids:['T1-CI-01','T1-CP-01','T1-CP-11','T1-CP-13','T2-CI-01','T2-CI-02']},
+  acquisition:{color:'200,224,50',ids:['T2-SG-05','T2-SG-01','T2-SG-03','T2-CO-01','T2-CO-02','T1-CI-01']},
+  flywheel:{color:'251,191,36',ids:['T1-CI-01','T1-DI-01','T3-DI-03','T1-CP-09']}
+};
+
+// ── STATE ──
+let activeTier = 'all';
+let activeCats = new Set();
+let activeFlow = null;
+let clickedCard = null;
+
+// ── BUILD GRID ──
+const mapGrid = document.getElementById('map-grid');
+const sysById = {};
+systems.forEach(s => sysById[s.id]=s);
+
+// Build tier rows — tiers 1,2,3 from top (visual top=T3 for building-metaphor? No, spec says bottom=T1)
+// Actually spec says "Bottom row: Tier 1" but that's the visual metaphor. In DOM, we can put T1 first (top) since it's "foundation" you build from.
+// We'll do T1 at top reading order since it's most important and "build here first" — matches "MVP Only" as default understanding.
+[1,2,3].forEach(tier=>{
+  const row = document.createElement('div');
+  row.className='tier-row';
+  row.dataset.tier=tier;
+
+  // Tier label cell
+  const lc = document.createElement('div');
+  lc.className='tier-label-cell';
+  const subtitles={1:'Prove it works on real data',2:'Someone can pay and rely on it',3:'50+ customers without breaking'};
+  const names={1:'MVP',2:'Paid Client',3:'Scaling'};
+  lc.innerHTML=`<div class="tier-label-num">T${tier}</div><div class="tier-label-name">${names[tier]}</div><div class="tier-label-sub">${subtitles[tier]}</div>`;
+  row.appendChild(lc);
+
+  // Category cells
+  CATS.forEach(cat=>{
+    const cell = document.createElement('div');
+    cell.className=`cat-cell cat-${cat}`;
+    cell.dataset.cat=cat;
+    cell.dataset.tier=tier;
+
+    const tierSystems = systems.filter(s=>s.tier===tier&&s.cat===cat);
+    if(tierSystems.length===0){
+      // empty cell indicator
+      const emp=document.createElement('div');
+      emp.className='cell-empty';
+      emp.textContent='—';
+      cell.appendChild(emp);
+    } else {
+      tierSystems.forEach(s=>{
+        const card=document.createElement('div');
+        card.className='sys-card';
+        card.dataset.id=s.id;
+        card.dataset.tier=tier;
+        card.dataset.cat=cat;
+        const badgeClass=`badge-t${tier}`;
+        const dotClass=CAT_DOT[cat];
+        const catRgb=CAT_RGBS[cat];
+        card.innerHTML=`<div class="card-top"><div class="card-dot ${dotClass}" style="box-shadow:0 0 5px rgba(${catRgb},0.6)"></div><div class="card-name">${s.name}</div><div class="card-badge ${badgeClass}">T${tier}</div></div><div class="card-desc">${s.desc}</div><div class="card-footer"><div class="card-cat-label" style="color:rgba(${catRgb},0.6)">${CAT_LABELS[cat]}</div><div class="card-id">${s.id}</div></div>`;
+        card.addEventListener('click',e=>{e.stopPropagation();handleCardClick(s.id);});
+        cell.appendChild(card);
+      });
+    }
+    row.appendChild(cell);
+  });
+  mapGrid.appendChild(row);
+});
+
+// Click on empty space to clear
+document.addEventListener('click',()=>{
+  if(clickedCard){clickedCard=null;clearHighlight();}
+});
+
+// ── COUNT BAR ──
+function updateCount(){
+  const t1=systems.filter(s=>s.tier===1).length;
+  const t2=systems.filter(s=>s.tier===2).length;
+  const t3=systems.filter(s=>s.tier===3).length;
+  let vis=systems;
+  if(activeTier!=='all') vis=vis.filter(s=>s.tier<=parseInt(activeTier));
+  if(activeCats.size>0) vis=vis.filter(s=>activeCats.has(s.cat));
+  const total=vis.length;
+  const bar=document.getElementById('count-bar');
+  if(activeTier==='all'&&activeCats.size===0){
+    bar.innerHTML=`TIER 1: <span class="cv">${t1}</span> systems &nbsp;|&nbsp; TIER 2: <span class="cv">+${t2}</span> systems &nbsp;|&nbsp; TIER 3: <span class="cv">+${t3}</span> systems &nbsp;|&nbsp; TOTAL: <span class="cv">${t1+t2+t3}</span>`;
+  } else {
+    bar.innerHTML=`Showing: <span class="cv">${total}</span> of <span class="cv">${t1+t2+t3}</span> systems`;
+  }
+}
+
+// ── TIER FILTER ──
+document.querySelectorAll('[data-tier]').forEach(btn=>{
+  if(!btn.dataset.tier||btn.tagName!=='BUTTON')return;
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.fbtn[data-tier]').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    activeTier=btn.dataset.tier;
+    applyFilters();
+  });
+});
+
+// ── CATEGORY FILTER ──
+document.querySelectorAll('.cat-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const cat=btn.dataset.cat;
+    if(activeCats.has(cat)){activeCats.delete(cat);btn.classList.remove('active');}
+    else{activeCats.add(cat);btn.classList.add('active');}
+    applyFilters();
+  });
+});
+
+function applyFilters(){
+  // Cards visibility
+  document.querySelectorAll('.sys-card').forEach(card=>{
+    const t=parseInt(card.dataset.tier);
+    const c=card.dataset.cat;
+    let show=true;
+    if(activeTier!=='all'&&t>parseInt(activeTier)) show=false;
+    if(activeCats.size>0&&!activeCats.has(c)) show=false;
+    card.style.opacity=show?'1':'0.12';
+    card.style.pointerEvents=show?'auto':'none';
+  });
+  // Column headers
+  document.querySelectorAll('[data-col]').forEach(h=>{
+    if(activeCats.size>0){
+      h.style.opacity=activeCats.has(h.dataset.col)?'1':'0.3';
+    } else {
+      h.style.opacity='1';
+    }
+  });
+  // Cat cells
+  document.querySelectorAll('.cat-cell').forEach(cell=>{
+    if(activeCats.size>0){
+      cell.classList.toggle('dimmed',!activeCats.has(cell.dataset.cat));
+    } else {
+      cell.classList.remove('dimmed');
+    }
+  });
+  updateCount();
+}
+
+// ── FLOW HIGHLIGHTING ──
+document.querySelectorAll('.flow-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const flow=btn.dataset.flow;
+    if(activeFlow===flow){activeFlow=null;btn.classList.remove('active');clearHighlight();return;}
+    activeFlow=flow;
+    document.querySelectorAll('.flow-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    highlightFlow(flow);
+  });
+});
+
+document.getElementById('clear-flow').addEventListener('click',()=>{
+  activeFlow=null;clickedCard=null;
+  document.querySelectorAll('.flow-btn').forEach(b=>b.classList.remove('active'));
+  clearHighlight();
+});
+
+function highlightFlow(flowKey){
+  const f=flows[flowKey];
+  const activeIds=new Set(f.ids);
+  document.querySelectorAll('.sys-card').forEach(card=>{
+    const id=card.dataset.id;
+    const inFlow=activeIds.has(id);
+    card.style.opacity=inFlow?'1':'0.15';
+    card.classList.remove('highlighted');
+    if(inFlow){
+      card.classList.add('highlighted');
+      // Apply highlight class based on category
+      const cat=card.dataset.cat;
+      card.classList.add(`cat-${cat.replace(/-/g,'_').replace(/[^a-z_]/g,'')}-hl`);
+    }
+  });
+}
+
+function handleCardClick(id){
+  if(clickedCard===id){clickedCard=null;clearHighlight();return;}
+  clickedCard=id;
+  activeFlow=null;
+  document.querySelectorAll('.flow-btn').forEach(b=>b.classList.remove('active'));
+  const sys=sysById[id];
+  if(!sys)return;
+  const connected=new Set([id,...sys.up,...sys.dn]);
+  document.querySelectorAll('.sys-card').forEach(card=>{
+    const cid=card.dataset.id;
+    const active=connected.has(cid);
+    card.style.opacity=active?'1':'0.15';
+    card.classList.toggle('highlighted',active);
+    if(active){
+      const cat=card.dataset.cat;
+      const catHlClass=`cat-${cat}-hl`;
+      card.classList.add(catHlClass);
+    }
+  });
+}
+
+function clearHighlight(){
+  document.querySelectorAll('.sys-card').forEach(card=>{
+    card.style.opacity='';
+    card.classList.remove('highlighted');
+    CATS.forEach(cat=>{card.classList.remove(`cat-${cat}-hl`);});
+  });
+  applyFilters();
+}
+
+// ── SVG CONNECTORS (lightweight, ambient) ──
+// We'll draw simple connecting lines between cards in the execution and intelligence flows
+// using requestAnimationFrame after DOM settles
+function drawConnectors(){
+  const svg=document.getElementById('svg-overlay');
+  svg.innerHTML='';
+  const gridRect=mapGrid.getBoundingClientRect();
+  const gridTop=mapGrid.offsetTop;
+
+  function getCardCenter(id){
+    const el=document.querySelector(`.sys-card[data-id="${id}"]`);
+    if(!el)return null;
+    const r=el.getBoundingClientRect();
+    const gr=mapGrid.getBoundingClientRect();
+    return{x:r.left-gr.left+r.width/2,y:r.top-gr.top+r.height/2};
+  }
+
+  // Draw connections for all defined upstream/downstream
+  const drawn=new Set();
+  systems.forEach(sys=>{
+    sys.dn.forEach(dnId=>{
+      const key=`${sys.id}-${dnId}`;
+      if(drawn.has(key))return;
+      drawn.add(key);
+      const c1=getCardCenter(sys.id);
+      const c2=getCardCenter(dnId);
+      if(!c1||!c2)return;
+      const line=document.createElementNS('http://www.w3.org/2000/svg','path');
+      const mx=(c1.x+c2.x)/2;
+      const d=`M${c1.x},${c1.y} C${c1.x},${c1.y+40} ${c2.x},${c2.y-40} ${c2.x},${c2.y}`;
+      line.setAttribute('d',d);
+      line.setAttribute('class','flow-line');
+      line.setAttribute('stroke','rgba(255,255,255,0.5)');
+      line.dataset.from=sys.id;
+      line.dataset.to=dnId;
+      svg.appendChild(line);
+    });
+  });
+  svg.setAttribute('width',mapGrid.scrollWidth);
+  svg.setAttribute('height',mapGrid.scrollHeight);
+}
+
+// Initial draw + redraw on resize
+setTimeout(drawConnectors,300);
+window.addEventListener('resize',()=>setTimeout(drawConnectors,100));
+
+// ── INITIAL STATE ──
+updateCount();
+</script>
+</body>
+</html>
