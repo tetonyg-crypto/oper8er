@@ -1,0 +1,1659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oper8er — Sales Execution Infrastructure</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800;900&display=swap');
+
+:root {
+  --navy:    #060c14;
+  --navy1:   #080f18;
+  --navy2:   #0a1422;
+  --navy3:   #0d1b2a;
+  --teal:    #00d4c8;
+  --teal2:   #00b8ae;
+  --lime:    #c8e032;
+  --blue:    #3b82f6;
+  --purple:  #a78bfa;
+  --green:   #22c55e;
+  --red:     #f87171;
+  --amber:   #fbbf24;
+  --white:   #ffffff;
+  --w80:  rgba(255,255,255,0.80);
+  --w60:  rgba(255,255,255,0.60);
+  --w40:  rgba(255,255,255,0.40);
+  --w20:  rgba(255,255,255,0.20);
+  --w10:  rgba(255,255,255,0.10);
+  --w06:  rgba(255,255,255,0.06);
+  --w03:  rgba(255,255,255,0.03);
+  --border: rgba(255,255,255,0.07);
+  --bt:   rgba(0,212,200,0.20);
+  --bl:   rgba(200,224,50,0.20);
+  --glow-teal: 0 0 40px rgba(0,212,200,0.15), 0 0 80px rgba(0,212,200,0.07);
+  --glow-lime: 0 0 40px rgba(200,224,50,0.15), 0 0 80px rgba(200,224,50,0.07);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--navy);
+  color: var(--white);
+  font-family: 'Sora', -apple-system, sans-serif;
+  overflow-x: hidden;
+  line-height: 1.5;
+}
+
+/* ── NOISE OVERLAY ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 999; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  opacity: 0.4;
+}
+
+/* ── NAV ── */
+#nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 500;
+  padding: 20px 48px;
+  display: flex; align-items: center; justify-content: space-between;
+  background: linear-gradient(to bottom, rgba(6,12,20,0.9), transparent);
+  backdrop-filter: blur(0px);
+  transition: backdrop-filter 0.3s, background 0.3s;
+}
+#nav.scrolled {
+  background: rgba(6,12,20,0.95);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-logo { font-size: 14px; font-weight: 800; letter-spacing: -0.3px; }
+.nav-logo-main { color: var(--white); }
+.nav-logo-sep { color: var(--teal); margin: 0 6px; }
+.nav-logo-sub { color: var(--teal); }
+.nav-pill {
+  font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--teal); background: rgba(0,212,200,0.08); border: 1px solid rgba(0,212,200,0.2);
+  padding: 6px 14px; border-radius: 20px;
+}
+.nav-dots {
+  display: flex; align-items: center; gap: 6px;
+}
+.nav-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--w20); cursor: pointer; transition: all 0.2s;
+}
+.nav-dot.active { background: var(--teal); box-shadow: 0 0 8px rgba(0,212,200,0.6); }
+
+/* ── SECTIONS ── */
+.section {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+  padding: 100px 48px;
+}
+.section-inner { width: 100%; max-width: 1160px; margin: 0 auto; position: relative; z-index: 2; }
+
+/* Background radial */
+.section::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 1;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(0,212,200,0.04) 0%, transparent 60%),
+    radial-gradient(ellipse at 100% 100%, rgba(200,224,50,0.03) 0%, transparent 50%);
+}
+
+/* Grid lines bg */
+.section-grid-bg::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 0;
+  background-image:
+    linear-gradient(rgba(0,212,200,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,200,0.03) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+
+/* Odd sections */
+.section:nth-child(even) { background: #070d16; }
+
+/* ── REVEAL ANIMATIONS ── */
+.reveal { opacity: 0; transform: translateY(32px); transition: opacity 0.7s ease, transform 0.7s ease; }
+.reveal.vis { opacity: 1; transform: translateY(0); }
+.reveal-left { opacity: 0; transform: translateX(-32px); transition: opacity 0.7s ease, transform 0.7s ease; }
+.reveal-left.vis { opacity: 1; transform: translateX(0); }
+.reveal-right { opacity: 0; transform: translateX(32px); transition: opacity 0.7s ease, transform 0.7s ease; }
+.reveal-right.vis { opacity: 1; transform: translateX(0); }
+.d1 { transition-delay: 0.1s; }
+.d2 { transition-delay: 0.2s; }
+.d3 { transition-delay: 0.3s; }
+.d4 { transition-delay: 0.4s; }
+.d5 { transition-delay: 0.5s; }
+.d6 { transition-delay: 0.6s; }
+.d7 { transition-delay: 0.7s; }
+
+/* ── TYPOGRAPHY ── */
+.eyebrow {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-size: 10px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--teal); margin-bottom: 24px;
+}
+.eyebrow::before { content: ''; width: 24px; height: 1px; background: var(--teal); opacity: 0.5; }
+
+h1.hero { font-size: clamp(52px, 7vw, 96px); font-weight: 900; letter-spacing: -3px; line-height: 0.95; }
+h2.section-h { font-size: clamp(36px, 5vw, 64px); font-weight: 900; letter-spacing: -2px; line-height: 1; }
+h2.section-h em { font-style: normal; color: var(--teal); }
+.section-desc { font-size: clamp(14px,1.5vw,17px); color: var(--w40); line-height: 1.7; max-width: 580px; margin-top: 16px; }
+
+/* ── COMPONENTS ── */
+.badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 9px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
+  padding: 3px 9px; border-radius: 20px;
+}
+.b-teal { background: rgba(0,212,200,0.10); color: var(--teal); border: 1px solid rgba(0,212,200,0.2); }
+.b-lime { background: rgba(200,224,50,0.10); color: var(--lime); border: 1px solid rgba(200,224,50,0.2); }
+.b-red  { background: rgba(239,68,68,0.10); color: var(--red); border: 1px solid rgba(239,68,68,0.2); }
+.b-green{ background: rgba(34,197,94,0.10); color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
+.b-amber{ background: rgba(251,191,36,0.10); color: var(--amber); border: 1px solid rgba(251,191,36,0.2); }
+.b-purple{background:rgba(167,139,250,0.10); color: var(--purple); border: 1px solid rgba(167,139,250,0.2); }
+
+.panel {
+  background: var(--navy3); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+}
+.panel-hd {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px; border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.panel-title { font-size: 9px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--w40); }
+.panel-bd { padding: 14px 16px; }
+
+/* Glow dot */
+.glow-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  animation: gdpulse 2s ease-in-out infinite;
+}
+.gd-teal { background: var(--teal); box-shadow: 0 0 8px rgba(0,212,200,0.8); }
+.gd-lime { background: var(--lime); box-shadow: 0 0 8px rgba(200,224,50,0.8); }
+.gd-green { background: var(--green); box-shadow: 0 0 8px rgba(34,197,94,0.8); }
+.gd-red { background: var(--red); box-shadow: 0 0 8px rgba(239,68,68,0.8); }
+.gd-amber { background: var(--amber); box-shadow: 0 0 8px rgba(251,191,36,0.8); }
+@keyframes gdpulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.6;transform:scale(0.85)} }
+
+/* ══════════════════════════════════
+   S1 — EXECUTION GAP
+══════════════════════════════════ */
+.stack-wrap { width: 100%; max-width: 700px; }
+.stack-layer {
+  display: flex; align-items: center; gap: 0;
+  margin-bottom: 4px;
+}
+.stack-label {
+  width: 200px; font-size: 11px; font-weight: 600; color: var(--w40);
+  text-align: right; padding-right: 16px; flex-shrink: 0;
+}
+.stack-bar {
+  flex: 1; height: 52px; border-radius: 10px;
+  display: flex; align-items: center; padding: 0 20px;
+  font-size: 12px; font-weight: 700; letter-spacing: 0.3px;
+  position: relative; overflow: hidden;
+  transition: all 0.4s ease;
+}
+.stack-bar::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.02));
+}
+.sb-marketing { background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.25); color: rgba(147,197,253,0.9); }
+.sb-crm       { background: rgba(167,139,250,0.12); border: 1px solid rgba(167,139,250,0.25); color: rgba(196,181,253,0.9); }
+.sb-analytics { background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.25); color: rgba(134,239,172,0.9); }
+.sb-gap {
+  background: transparent; border: 2px dashed rgba(0,212,200,0.3);
+  color: rgba(0,212,200,0.5); font-style: italic;
+  animation: gap-pulse 2s ease-in-out infinite;
+}
+.sb-gap.active-gap {
+  border-color: rgba(0,212,200,0.6);
+  box-shadow: 0 0 30px rgba(0,212,200,0.15), inset 0 0 30px rgba(0,212,200,0.05);
+  animation: gap-pulse-hot 1.5s ease-in-out infinite;
+}
+@keyframes gap-pulse { 0%,100%{opacity:0.5} 50%{opacity:1} }
+@keyframes gap-pulse-hot { 0%,100%{opacity:0.7;box-shadow:0 0 20px rgba(0,212,200,0.1)} 50%{opacity:1;box-shadow:0 0 40px rgba(0,212,200,0.25)} }
+.sb-insights  { background: rgba(251,191,36,0.12); border: 1px solid rgba(251,191,36,0.25); color: rgba(253,230,138,0.9); }
+.stack-icon { width: 20px; height: 20px; margin-right: 10px; opacity: 0.7; }
+
+/* ══════════════════════════════════
+   S2 — WHY EXECUTION FAILS
+══════════════════════════════════ */
+.timeline-compare { width: 100%; display: flex; flex-direction: column; gap: 40px; margin-top: 48px; }
+.timeline-row { display: flex; align-items: flex-start; gap: 28px; }
+.timeline-row-label { width: 180px; flex-shrink: 0; padding-top: 16px; }
+.timeline-row-label h4 { font-size: 13px; font-weight: 800; color: var(--white); margin-bottom: 4px; }
+.timeline-row-label p { font-size: 10.5px; color: var(--w40); line-height: 1.5; }
+.timeline-track { flex: 1; position: relative; height: 56px; }
+.tl-line {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  height: 2px; border-radius: 1px;
+}
+.tl-designed { left: 0; right: 0; background: linear-gradient(90deg, rgba(0,212,200,0.8), rgba(200,224,50,0.8)); }
+.tl-node {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 10px; height: 10px; border-radius: 50%;
+  border: 2px solid;
+}
+.tl-designed .tl-node, .tn-designed { border-color: var(--teal); background: rgba(0,212,200,0.2); }
+.tl-actual-bg {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  height: 2px; background: rgba(255,255,255,0.1); border-radius: 1px;
+  left: 0; right: 0;
+}
+.tl-segment {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  height: 2px; border-radius: 1px;
+}
+.tl-gap {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  height: 2px; background: repeating-linear-gradient(90deg, rgba(239,68,68,0.5) 0px, rgba(239,68,68,0.5) 3px, transparent 3px, transparent 7px);
+  border-radius: 1px;
+}
+.tl-delay-marker {
+  position: absolute; top: 0; transform: translateX(-50%);
+  font-size: 8px; font-weight: 700; color: var(--red); white-space: nowrap;
+  background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2);
+  padding: 1px 5px; border-radius: 3px;
+}
+.diverge-note {
+  margin-top: 32px; padding: 16px 24px;
+  background: rgba(239,68,68,0.05); border: 1px solid rgba(239,68,68,0.15);
+  border-left: 3px solid var(--red); border-radius: 10px;
+  font-size: 13px; color: var(--w60);
+}
+.diverge-note strong { color: var(--red); }
+
+/* ══════════════════════════════════
+   S3 — CATEGORY
+══════════════════════════════════ */
+/* reuse stack but filled */
+.sb-exec-filled {
+  background: linear-gradient(90deg, rgba(0,212,200,0.15), rgba(200,224,50,0.10));
+  border: 1px solid rgba(0,212,200,0.4);
+  color: var(--teal);
+  box-shadow: 0 0 30px rgba(0,212,200,0.12), inset 0 0 30px rgba(0,212,200,0.04);
+  font-weight: 800; font-size: 14px; letter-spacing: 0.5px;
+}
+
+/* ══════════════════════════════════
+   S4 — INTRODUCING OPER8ER
+══════════════════════════════════ */
+#s4 {
+  background: var(--navy-deep);
+  background: radial-gradient(ellipse at 50% 50%, rgba(0,212,200,0.08) 0%, transparent 65%),
+              radial-gradient(ellipse at 20% 80%, rgba(200,224,50,0.05) 0%, transparent 50%),
+              var(--navy);
+}
+.intro-title {
+  font-size: clamp(80px, 12vw, 160px);
+  font-weight: 900; letter-spacing: -6px; line-height: 0.9;
+  color: var(--white);
+}
+.intro-title .t-teal { color: var(--teal); }
+.intro-sub {
+  font-size: clamp(16px, 2vw, 22px); color: var(--w40); font-weight: 400;
+  letter-spacing: 0.5px; margin-top: 24px; max-width: 600px;
+}
+.intro-meta {
+  display: flex; align-items: center; gap: 28px; margin-top: 48px;
+  flex-wrap: wrap;
+}
+.intro-meta-item { display: flex; flex-direction: column; gap: 3px; }
+.intro-meta-val { font-size: 28px; font-weight: 900; letter-spacing: -1px; color: var(--teal); line-height: 1; }
+.intro-meta-label { font-size: 9px; color: var(--w40); text-transform: uppercase; letter-spacing: 1.5px; }
+.intro-meta-div { width: 1px; height: 40px; background: var(--border); }
+
+/* ══════════════════════════════════
+   S5 — FOUR-LAYER ARCHITECTURE
+══════════════════════════════════ */
+.arch-diagram {
+  width: 100%; display: flex; flex-direction: column; align-items: center; gap: 0;
+}
+.arch-layer {
+  width: 100%; max-width: 820px;
+  display: flex; align-items: center; gap: 0;
+  position: relative;
+}
+.arch-layer-box {
+  flex: 1; height: 72px; border-radius: 12px;
+  display: flex; align-items: center; padding: 0 24px; gap: 14px;
+  position: relative; overflow: hidden; cursor: default;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.arch-layer-box:hover { transform: scaleX(1.01); }
+.arch-layer-box::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent 60%, rgba(255,255,255,0.02));
+}
+.alb-conv  { background: rgba(0,212,200,0.10); border: 1px solid rgba(0,212,200,0.3); box-shadow: 0 0 20px rgba(0,212,200,0.08); }
+.alb-exec  { background: rgba(200,224,50,0.10); border: 1px solid rgba(200,224,50,0.3); box-shadow: 0 0 20px rgba(200,224,50,0.08); }
+.alb-telem { background: rgba(59,130,246,0.10); border: 1px solid rgba(59,130,246,0.3); box-shadow: 0 0 20px rgba(59,130,246,0.08); }
+.alb-intel { background: rgba(167,139,250,0.10); border: 1px solid rgba(167,139,250,0.3); box-shadow: 0 0 20px rgba(167,139,250,0.08); }
+
+.arch-layer-num { font-size: 10px; font-weight: 800; color: var(--w20); letter-spacing: 1px; }
+.arch-layer-name { font-size: 17px; font-weight: 800; color: var(--white); letter-spacing: -0.3px; flex: 1; }
+.arch-layer-desc { font-size: 11px; color: var(--w40); text-align: right; max-width: 260px; line-height: 1.4; }
+
+.arch-connector {
+  width: 100%; max-width: 820px; height: 28px;
+  display: flex; justify-content: center; align-items: center;
+  position: relative;
+}
+.arch-connector::before {
+  content: ''; position: absolute; left: 50%; transform: translateX(-50%);
+  width: 2px; height: 100%;
+  background: linear-gradient(to bottom, rgba(0,212,200,0.4), rgba(0,212,200,0.1));
+}
+.arch-connector-arrow {
+  position: absolute; left: 50%; transform: translateX(-50%) translateY(8px);
+  width: 0; height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 7px solid rgba(0,212,200,0.5);
+}
+.arch-loop-line {
+  position: absolute; right: -24px; top: 0; bottom: 0;
+  width: 20px; border-right: 2px dashed rgba(0,212,200,0.2);
+  border-top: 2px dashed rgba(0,212,200,0.2); border-bottom: 2px dashed rgba(0,212,200,0.2);
+  border-radius: 0 8px 8px 0;
+}
+
+/* ══════════════════════════════════
+   S6 — ENGINE SYSTEM
+══════════════════════════════════ */
+.engine-system {
+  position: relative; width: 100%; height: 480px; max-width: 900px; margin: 0 auto;
+}
+.engine-center {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 130px; height: 130px; border-radius: 50%;
+  background: rgba(0,212,200,0.08);
+  border: 2px solid rgba(0,212,200,0.4);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px; text-align: center;
+  box-shadow: 0 0 0 12px rgba(0,212,200,0.04), 0 0 0 24px rgba(0,212,200,0.02), var(--glow-teal);
+  animation: center-pulse 3s ease-in-out infinite;
+  z-index: 5;
+}
+@keyframes center-pulse {
+  0%,100%{box-shadow: 0 0 0 12px rgba(0,212,200,0.04), 0 0 0 24px rgba(0,212,200,0.02), 0 0 40px rgba(0,212,200,0.15);}
+  50%{box-shadow: 0 0 0 16px rgba(0,212,200,0.06), 0 0 0 32px rgba(0,212,200,0.03), 0 0 60px rgba(0,212,200,0.2);}
+}
+.engine-center-title { font-size: 10px; font-weight: 800; color: var(--teal); letter-spacing: 0.5px; text-transform: uppercase; line-height: 1.2; }
+.engine-center-sub { font-size: 8px; color: var(--w40); }
+
+.engine-node {
+  position: absolute; width: 120px;
+  background: var(--navy3); border: 1px solid var(--border);
+  border-radius: 12px; padding: 12px 14px;
+  cursor: default; transition: transform 0.25s, border-color 0.25s, box-shadow 0.25s;
+  opacity: 0; transform: scale(0.8);
+}
+.engine-node.vis { opacity: 1; transform: scale(1); }
+.engine-node:hover { transform: scale(1.06); border-color: rgba(0,212,200,0.35); box-shadow: 0 0 20px rgba(0,212,200,0.1); }
+.engine-node-name { font-size: 11px; font-weight: 800; color: var(--white); margin-bottom: 5px; line-height: 1.2; }
+.engine-node-trigger { font-size: 8px; color: var(--teal); line-height: 1.35; }
+.engine-node-num { font-size: 8px; font-weight: 800; color: var(--w20); margin-bottom: 6px; letter-spacing: 1px; }
+
+/* SVG lines between center and engines */
+.engine-svg { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
+
+/* ══════════════════════════════════
+   S7 — EXECUTION PIPELINE
+══════════════════════════════════ */
+.pipeline-flow {
+  display: flex; flex-direction: column; gap: 0; width: 100%; position: relative;
+}
+.pipeline-main {
+  display: flex; align-items: center; gap: 0; justify-content: center; flex-wrap: nowrap;
+}
+.pf-node {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  flex: 0 0 auto;
+}
+.pf-box {
+  background: var(--navy3); border: 1px solid var(--border); border-radius: 10px;
+  padding: 10px 14px; text-align: center; min-width: 90px;
+  position: relative; overflow: hidden;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+.pf-box::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+.pfb-teal::before { background: var(--teal); }
+.pfb-lime::before { background: var(--lime); }
+.pfb-purple::before { background: var(--purple); }
+.pf-box.active-node { border-color: rgba(0,212,200,0.4); box-shadow: 0 0 20px rgba(0,212,200,0.1); }
+.pf-icon { font-size: 16px; display: block; margin-bottom: 4px; }
+.pf-name { font-size: 10px; font-weight: 700; color: var(--white); line-height: 1.2; }
+.pf-arrow {
+  flex: 0 0 20px; display: flex; flex-direction: column; align-items: center;
+}
+.pf-arrow-line {
+  width: 20px; height: 1.5px; background: rgba(0,212,200,0.3); position: relative;
+}
+.pf-arrow-line::after {
+  content: ''; position: absolute; right: -4px; top: -3px;
+  border-left: 5px solid rgba(0,212,200,0.4);
+  border-top: 3.5px solid transparent; border-bottom: 3.5px solid transparent;
+}
+
+/* Cascade */
+.pipeline-cascade {
+  display: flex; justify-content: center; margin-top: 0;
+  opacity: 0; transform: translateY(16px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.pipeline-cascade.active { opacity: 1; transform: translateY(0); }
+.cascade-connector-area { display: flex; flex-direction: column; align-items: center; }
+.cascade-vert { width: 1.5px; height: 24px; background: rgba(0,212,200,0.3); }
+.cascade-horiz { display: flex; align-items: flex-start; gap: 0; }
+.cascade-branch { display: flex; flex-direction: column; align-items: center; gap: 0; }
+.cascade-branch-line { width: 1.5px; height: 20px; background: rgba(0,212,200,0.2); }
+.cascade-out-card {
+  background: var(--navy3); border: 1px solid var(--border);
+  border-top: 2px solid; border-radius: 9px; padding: 9px 12px;
+  text-align: center; min-width: 100px;
+}
+.co-teal { border-top-color: var(--teal); }
+.co-lime { border-top-color: var(--lime); }
+.co-purple { border-top-color: var(--purple); }
+.co-green { border-top-color: var(--green); }
+.cascade-out-title { font-size: 9.5px; font-weight: 800; color: var(--white); margin-bottom: 2px; }
+.cascade-out-sub { font-size: 8px; color: var(--w40); line-height: 1.3; }
+.cascade-horiz-line { width: 60px; height: 1.5px; background: rgba(0,212,200,0.2); margin-top: 20px; }
+
+/* ══════════════════════════════════
+   S8 — LIVE DEMO
+══════════════════════════════════ */
+.demo-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+  width: 100%;
+}
+.demo-left { display: flex; flex-direction: column; gap: 12px; }
+.demo-right { display: flex; flex-direction: column; gap: 12px; }
+.inbound-card {
+  background: var(--navy3); border: 1px solid var(--border); border-radius: 12px;
+  padding: 16px;
+}
+.inbound-label { font-size: 9px; font-weight: 800; color: var(--w40); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
+.inbound-bubble {
+  background: #1b2835; border-radius: 10px; padding: 12px 14px;
+  border-left: 3px solid rgba(255,255,255,0.1);
+  font-size: 14px; color: var(--white); line-height: 1.5; font-weight: 500;
+}
+.inbound-meta { font-size: 9.5px; color: var(--w20); margin-top: 8px; display: flex; gap: 12px; }
+.detect-rows { display: flex; flex-direction: column; gap: 5px; }
+.det-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 10px; background: var(--w03); border-radius: 7px;
+  border: 1px solid var(--border);
+}
+.det-label { font-size: 11px; color: var(--w60); }
+.det-val { font-size: 9px; font-weight: 800; padding: 2px 7px; border-radius: 4px; }
+.dv-hot { background: rgba(239,68,68,0.12); color: var(--red); }
+.dv-ok  { background: rgba(34,197,94,0.12); color: var(--green); }
+.dv-med { background: rgba(251,191,36,0.12); color: var(--amber); }
+
+.engine-active-card {
+  background: rgba(200,224,50,0.05); border: 1px solid rgba(200,224,50,0.2);
+  border-radius: 10px; padding: 12px 14px;
+  display: flex; align-items: center; gap: 12px;
+}
+.ea-icon { width: 32px; height: 32px; border-radius: 8px; background: rgba(200,224,50,0.1); border: 1px solid rgba(200,224,50,0.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.ea-name { font-size: 13px; font-weight: 800; color: var(--white); }
+.ea-sub { font-size: 10px; color: var(--w40); }
+
+.response-card {
+  background: var(--navy3); border: 1px solid var(--border); border-radius: 12px;
+  padding: 16px; flex: 1;
+}
+.resp-bad-wrap {
+  background: rgba(239,68,68,0.04); border: 1px solid rgba(239,68,68,0.1);
+  border-radius: 8px; padding: 10px 12px; margin-bottom: 8px;
+}
+.rb-label { font-size: 8.5px; font-weight: 800; color: var(--red); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 5px; }
+.rb-text { font-size: 12px; color: rgba(255,255,255,0.3); font-style: italic; line-height: 1.5; }
+.resp-good-wrap {
+  background: rgba(0,212,200,0.05); border: 1px solid rgba(0,212,200,0.15);
+  border-radius: 8px; padding: 12px 14px; margin-bottom: 8px;
+}
+.rg-label { font-size: 8.5px; font-weight: 800; color: var(--teal); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+.rg-text { font-size: 13px; color: var(--white); line-height: 1.55; }
+.resp-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
+.resp-tag { font-size: 8px; font-weight: 700; color: var(--teal); background: rgba(0,212,200,0.08); border: 1px solid rgba(0,212,200,0.15); padding: 2px 6px; border-radius: 4px; }
+
+#send-btn {
+  background: var(--lime); color: #0a0f0a; border: none; border-radius: 10px;
+  font-size: 13px; font-weight: 800; padding: 14px 28px; cursor: pointer;
+  transition: background 0.15s, transform 0.15s; width: 100%; font-family: 'Sora', sans-serif;
+}
+#send-btn:hover { background: #d4ec3c; transform: translateY(-1px); }
+#send-btn:active { transform: translateY(0); }
+
+.cascade-fire {
+  background: rgba(0,212,200,0.04); border: 1px solid rgba(0,212,200,0.12);
+  border-radius: 10px; padding: 12px 14px;
+  opacity: 0; transform: translateY(8px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.cascade-fire.active { opacity: 1; transform: translateY(0); }
+.cf-title { font-size: 8.5px; font-weight: 800; color: var(--teal); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
+.cf-item { display: flex; align-items: center; gap: 7px; font-size: 11px; color: var(--w60); margin-bottom: 5px; }
+
+/* ══════════════════════════════════
+   S9 — MANAGER DASHBOARD
+══════════════════════════════════ */
+.dashboard-grid {
+  display: grid; grid-template-columns: 1.1fr 0.9fr 1fr; gap: 14px;
+}
+.dash-col { display: flex; flex-direction: column; gap: 10px; }
+.deal-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; border-radius: 9px; border: 1px solid;
+}
+.dr-h { background: rgba(34,197,94,0.05); border-color: rgba(34,197,94,0.14); }
+.dr-r { background: rgba(251,191,36,0.05); border-color: rgba(251,191,36,0.14); }
+.dr-c { background: rgba(239,68,68,0.05); border-color: rgba(239,68,68,0.14); }
+.dr-nm { flex: 1; }
+.dr-pn { font-size: 11px; font-weight: 700; color: var(--white); }
+.dr-sg { font-size: 8.5px; color: var(--w40); margin-top: 2px; }
+.dr-sc { font-size: 22px; font-weight: 900; letter-spacing: -1px; min-width: 30px; text-align: right; }
+.dr-h .dr-sc { color: var(--green); }
+.dr-r .dr-sc { color: var(--amber); }
+.dr-c .dr-sc { color: var(--red); }
+
+.rep-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 10px; background: var(--w03); border-radius: 7px; border: 1px solid var(--border);
+}
+.rr-rank { font-size: 10px; font-weight: 900; color: var(--w20); min-width: 14px; }
+.rr-av { width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 800; }
+.rr-name { flex: 1; font-size: 11px; font-weight: 700; color: var(--white); }
+.rr-bar-wrap { width: 60px; height: 3px; background: rgba(255,255,255,0.07); border-radius: 2px; overflow: hidden; }
+.rr-bar { height: 100%; border-radius: 2px; background: var(--teal); }
+.rr-score { font-size: 13px; font-weight: 900; margin-left: 6px; }
+
+.metric-card {
+  text-align: center; padding: 14px; background: var(--w03); border-radius: 10px; border: 1px solid var(--border);
+}
+.mc-val { font-size: 28px; font-weight: 900; letter-spacing: -1px; }
+.mc-lbl { font-size: 8.5px; color: var(--w40); text-transform: uppercase; letter-spacing: 1px; margin-top: 3px; }
+.mc-d { font-size: 9.5px; font-weight: 700; margin-top: 3px; }
+
+/* ══════════════════════════════════
+   S10 — DEAL AUTOPSY
+══════════════════════════════════ */
+.autopsy-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: start; }
+.tl { display: flex; flex-direction: column; gap: 0; }
+.tl-ev { display: flex; gap: 14px; padding-bottom: 14px; position: relative; }
+.tl-ev::before { content: ''; position: absolute; left: 5.5px; top: 14px; bottom: 0; width: 1px; background: var(--border); }
+.tl-ev:last-child::before { display: none; }
+.tl-ev:last-child { padding-bottom: 0; }
+.tl-dt { width: 12px; height: 12px; border-radius: 50%; border: 2px solid; flex-shrink: 0; margin-top: 2px; }
+.tl-ok  { border-color: var(--green); background: rgba(34,197,94,0.12); }
+.tl-wn  { border-color: var(--amber); background: rgba(251,191,36,0.12); }
+.tl-fl  { border-color: var(--red); background: rgba(239,68,68,0.12); }
+.tl-tm  { font-size: 9px; color: var(--w20); min-width: 80px; padding-top: 1px; line-height: 1.4; }
+.tl-tx  { font-size: 12px; color: var(--w60); line-height: 1.45; }
+.tl-fail-label { color: var(--red); font-weight: 700; }
+.root-box {
+  background: rgba(239,68,68,0.05); border: 1px solid rgba(239,68,68,0.15);
+  border-left: 3px solid var(--red); border-radius: 10px; padding: 14px 16px; margin-top: 16px;
+}
+.root-lbl { font-size: 8.5px; font-weight: 800; color: var(--red); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 5px; }
+.root-txt { font-size: 12px; color: var(--w60); line-height: 1.55; }
+
+.failure-bars { display: flex; flex-direction: column; gap: 14px; }
+.fb-row { }
+.fb-label { font-size: 10px; color: var(--w60); display: flex; justify-content: space-between; margin-bottom: 5px; }
+.fb-label span { font-size: 11px; font-weight: 800; color: var(--red); }
+.fb-track { height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; }
+.fb-fill { height: 100%; background: rgba(239,68,68,0.5); border-radius: 3px; width: 0; transition: width 1.2s cubic-bezier(0.22, 1, 0.36, 1); }
+.before-after { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+.ba-item {
+  padding: 10px 12px; border-radius: 8px; border-left: 2px solid;
+}
+.ba-bad { background: rgba(239,68,68,0.04); border-left-color: rgba(239,68,68,0.3); }
+.ba-good { background: rgba(0,212,200,0.04); border-left-color: rgba(0,212,200,0.3); }
+.ba-lbl { font-size: 8.5px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
+.ba-bad .ba-lbl { color: var(--red); }
+.ba-good .ba-lbl { color: var(--teal); }
+.ba-txt { font-size: 11px; color: var(--w60); line-height: 1.45; }
+
+/* ══════════════════════════════════
+   S11 — PLATFORM EXPANSION
+══════════════════════════════════ */
+.platform-diagram {
+  width: 100%; max-width: 860px; margin: 0 auto; position: relative;
+}
+.platform-verticals {
+  display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-bottom: 0;
+}
+.pv-card {
+  background: var(--navy3); border: 1px solid var(--border); border-radius: 10px;
+  padding: 12px 18px; text-align: center; min-width: 120px;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.pv-card:hover { border-color: rgba(0,212,200,0.3); transform: translateY(-2px); }
+.pv-card.primary { border-color: rgba(0,212,200,0.35); background: rgba(0,212,200,0.06); }
+.pv-name { font-size: 11px; font-weight: 800; color: var(--white); }
+.pv-status { font-size: 8px; color: var(--w40); margin-top: 3px; }
+.pv-status.live { color: var(--green); font-weight: 700; }
+
+.platform-connectors { display: flex; justify-content: center; }
+.pc-svg { width: 100%; max-width: 700px; }
+
+.platform-core {
+  background: linear-gradient(135deg, rgba(0,212,200,0.1), rgba(200,224,50,0.05));
+  border: 1px solid rgba(0,212,200,0.35);
+  border-radius: 16px; padding: 28px 36px; text-align: center; margin: 0 auto;
+  max-width: 480px;
+  box-shadow: var(--glow-teal);
+}
+.pc-title { font-size: 18px; font-weight: 900; color: var(--white); letter-spacing: -0.5px; margin-bottom: 6px; }
+.pc-sub { font-size: 11px; color: var(--teal); font-weight: 600; }
+.pc-data { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--bt); display: flex; justify-content: center; gap: 28px; }
+.pc-data-item { text-align: center; }
+.pc-data-val { font-size: 18px; font-weight: 900; color: var(--teal); letter-spacing: -0.5px; }
+.pc-data-lbl { font-size: 8px; color: var(--w40); text-transform: uppercase; letter-spacing: 1px; }
+
+.platform-bottom { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 0; }
+.pb-card {
+  background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.2);
+  border-radius: 8px; padding: 8px 14px; font-size: 10px; color: rgba(147,197,253,0.8); font-weight: 700;
+}
+
+/* ══════════════════════════════════
+   S12 — DATA FLYWHEEL
+══════════════════════════════════ */
+.flywheel-wrap { position: relative; width: 500px; height: 500px; margin: 0 auto; }
+.flywheel-svg { position: absolute; inset: 0; }
+.fw-node {
+  position: absolute; transform: translate(-50%, -50%);
+  background: var(--navy3); border: 1px solid var(--border); border-radius: 10px;
+  padding: 10px 14px; text-align: center; min-width: 100px; max-width: 120px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+.fw-node.active-fw { border-color: rgba(0,212,200,0.4); box-shadow: 0 0 20px rgba(0,212,200,0.12); }
+.fw-node-num { font-size: 8px; font-weight: 800; color: var(--w20); margin-bottom: 4px; letter-spacing: 1px; }
+.fw-node-name { font-size: 11px; font-weight: 800; color: var(--white); line-height: 1.2; }
+.fw-node-desc { font-size: 8.5px; color: var(--w40); margin-top: 3px; line-height: 1.3; }
+
+/* ══════════════════════════════════
+   S13 — CONVERSATION
+══════════════════════════════════ */
+#s13 {
+  background: radial-gradient(ellipse at 50% 50%, rgba(0,212,200,0.07) 0%, transparent 65%), var(--navy);
+}
+.final-wrap { text-align: center; }
+.final-logo { font-size: 64px; font-weight: 900; letter-spacing: -3px; color: var(--white); margin-bottom: 8px; }
+.final-logo span { color: var(--teal); }
+.final-byline { font-size: 14px; color: var(--w40); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 48px; }
+.final-q {
+  font-size: clamp(22px, 3.5vw, 38px); font-weight: 700; color: var(--w80);
+  letter-spacing: -0.5px; line-height: 1.3; max-width: 700px; margin: 0 auto 48px;
+}
+.final-q em { font-style: normal; color: var(--teal); }
+.final-meta { display: flex; align-items: center; justify-content: center; gap: 24px; flex-wrap: wrap; }
+.final-contact { font-size: 12px; color: var(--w40); }
+.final-contact strong { color: var(--teal); }
+.final-divider { width: 1px; height: 20px; background: var(--border); }
+
+/* ══════════════════════════════════
+   SCROLL PROGRESS
+══════════════════════════════════ */
+#progress-bar {
+  position: fixed; top: 0; left: 0; height: 2px;
+  background: linear-gradient(90deg, var(--teal), var(--lime));
+  z-index: 1000; width: 0; transition: width 0.1s;
+  box-shadow: 0 0 8px rgba(0,212,200,0.5);
+}
+
+/* ══════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════ */
+@media (max-width: 900px) {
+  .demo-grid, .autopsy-layout, .dashboard-grid { grid-template-columns: 1fr; }
+  .engine-system { height: auto; position: static; display: flex; flex-direction: column; gap: 10px; align-items: center; }
+  .engine-node { position: static; transform: none !important; opacity: 1 !important; width: 100%; max-width: 320px; }
+  .engine-center { position: static; transform: none; margin: 0 auto 20px; }
+  .engine-svg { display: none; }
+  .flywheel-wrap { width: 320px; height: 320px; }
+  .section { padding: 80px 24px; }
+  #nav { padding: 16px 24px; }
+}
+
+@media (max-width: 600px) {
+  .platform-verticals, .platform-bottom { flex-direction: column; align-items: center; }
+  .arch-layer-desc { display: none; }
+  .timeline-row-label { width: 100px; }
+}
+</style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+
+<!-- NAV -->
+<nav id="nav">
+  <div class="nav-logo">
+    <span class="nav-logo-main">YENES</span>
+    <span class="nav-logo-sep">·</span>
+    <span class="nav-logo-sub">Oper8er</span>
+  </div>
+  <div class="nav-dots" id="nav-dots"></div>
+  <div class="nav-pill">Strategic Partner Briefing</div>
+</nav>
+
+<!-- ══════════════════════════════════
+     S1 — THE EXECUTION GAP
+══════════════════════════════════ -->
+<section class="section section-grid-bg" id="s1">
+  <div class="section-inner">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;">
+      <div>
+        <div class="eyebrow reveal">Revenue Technology</div>
+        <h2 class="section-h reveal d1">The<br><em>Execution Gap</em></h2>
+        <p class="section-desc reveal d2">Every revenue tech stack has the same missing layer. Marketing automation fires. CRM records. Analytics reports. But between the lead and the outcome — no system enforces how execution actually happens.</p>
+        <div style="margin-top:32px;" class="reveal d3">
+          <div id="gap-highlight" style="padding:14px 18px;background:rgba(0,212,200,0.04);border:1px solid rgba(0,212,200,0.12);border-radius:10px;font-size:12px;color:var(--w40);line-height:1.6;">
+            The result: leads generated successfully, lost through execution failure.<br>
+            <strong style="color:var(--teal);">The investment is already made. The problem is structural.</strong>
+          </div>
+        </div>
+      </div>
+      <div class="stack-wrap reveal d2" id="stack1">
+        <div class="stack-layer">
+          <div class="stack-label">Lead Generation</div>
+          <div class="stack-bar sb-marketing">
+            <svg class="stack-icon" viewBox="0 0 20 20" fill="none"><path d="M17 8h-7L7 2 1 12h7l3 6 6-10z" stroke="rgba(147,197,253,0.8)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Marketing Automation
+          </div>
+        </div>
+        <div class="stack-layer">
+          <div class="stack-label">Pipeline Management</div>
+          <div class="stack-bar sb-crm">
+            <svg class="stack-icon" viewBox="0 0 20 20" fill="none"><rect x="3" y="3" width="14" height="14" rx="2" stroke="rgba(196,181,253,0.8)" stroke-width="1.5"/><path d="M7 10h6M7 7h6M7 13h4" stroke="rgba(196,181,253,0.8)" stroke-width="1.3" stroke-linecap="round"/></svg>
+            CRM Systems
+          </div>
+        </div>
+        <div class="stack-layer" id="gap-layer">
+          <div class="stack-label" style="color:rgba(0,212,200,0.6);">Execution Layer</div>
+          <div class="stack-bar sb-gap" id="gap-bar">
+            <span>EXECUTION</span>
+            <span style="font-size:9px;margin-left:auto;font-weight:700;letter-spacing:1px;">← MISSING</span>
+          </div>
+        </div>
+        <div class="stack-layer">
+          <div class="stack-label">Measurement</div>
+          <div class="stack-bar sb-analytics">
+            <svg class="stack-icon" viewBox="0 0 20 20" fill="none"><path d="M3 15l4-4 3 3 5-6" stroke="rgba(134,239,172,0.8)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Analytics &amp; Reporting
+          </div>
+        </div>
+        <div class="stack-layer">
+          <div class="stack-label">Business Intelligence</div>
+          <div class="stack-bar sb-insights">
+            <svg class="stack-icon" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" stroke="rgba(253,230,138,0.8)" stroke-width="1.5"/><path d="M10 6v4l2.5 2.5" stroke="rgba(253,230,138,0.8)" stroke-width="1.5" stroke-linecap="round"/></svg>
+            Revenue Intelligence
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════
+     S2 — WHY EXECUTION FAILS
+══════════════════════════════════ -->
+<section class="section" id="s2">
+  <div class="section-inner">
+    <div class="eyebrow reveal">The Root Cause</div>
+    <h2 class="section-h reveal d1">Designed Process<br>vs. <em>Actual Execution</em></h2>
+    <p class="section-desc reveal d2">Managers design perfect sales processes. As lead volume grows, the gap between design and reality widens — invisibly, structurally, and by default.</p>
+    <div class="timeline-compare reveal d3">
+      <!-- Designed -->
+      <div class="timeline-row">
+        <div class="timeline-row-label">
+          <h4>Designed Process</h4>
+          <p>Clean, sequential, enforced</p>
+        </div>
+        <div class="timeline-track" style="height:48px;">
+          <div class="tl-line tl-designed" style="background:linear-gradient(90deg,rgba(0,212,200,0.8),rgba(200,224,50,0.8));height:2px;position:absolute;top:50%;transform:translateY(-50%);left:0;right:0;border-radius:1px;"></div>
+          <div style="position:absolute;top:50%;left:0%;transform:translate(-50%,-50%);width:10px;height:10px;border-radius:50%;background:rgba(0,212,200,0.2);border:2px solid var(--teal);"></div>
+          <div style="position:absolute;top:50%;left:20%;transform:translate(-50%,-50%);width:10px;height:10px;border-radius:50%;background:rgba(0,212,200,0.2);border:2px solid var(--teal);"></div>
+          <div style="position:absolute;top:50%;left:40%;transform:translate(-50%,-50%);width:10px;height:10px;border-radius:50%;background:rgba(0,212,200,0.2);border:2px solid var(--teal);"></div>
+          <div style="position:absolute;top:50%;left:60%;transform:translate(-50%,-50%);width:10px;height:10px;border-radius:50%;background:rgba(0,212,200,0.2);border:2px solid var(--teal);"></div>
+          <div style="position:absolute;top:50%;left:80%;transform:translate(-50%,-50%);width:10px;height:10px;border-radius:50%;background:rgba(0,212,200,0.2);border:2px solid var(--teal);"></div>
+          <div style="position:absolute;top:50%;left:100%;transform:translate(-50%,-50%);width:10px;height:10px;border-radius:50%;background:rgba(200,224,50,0.2);border:2px solid var(--lime);"></div>
+          <div style="position:absolute;top:-2px;left:0%;transform:translateX(-50%);font-size:8px;color:var(--w20);white-space:nowrap;">Lead In</div>
+          <div style="position:absolute;top:-2px;left:100%;transform:translateX(-50%);font-size:8px;color:var(--lime);white-space:nowrap;">Close</div>
+        </div>
+      </div>
+      <!-- Actual -->
+      <div class="timeline-row">
+        <div class="timeline-row-label">
+          <h4 style="color:rgba(255,255,255,0.7);">Actual Execution</h4>
+          <p>Fragmented, delayed, invisible</p>
+        </div>
+        <div class="timeline-track" style="height:80px;">
+          <div class="tl-actual-bg"></div>
+          <!-- segments -->
+          <div style="position:absolute;top:50%;transform:translateY(-50%);left:0;width:6%;height:2px;background:rgba(0,212,200,0.5);border-radius:1px;"></div>
+          <div style="position:absolute;top:50%;transform:translateY(-50%);left:6%;width:14%;height:2px;background:repeating-linear-gradient(90deg,rgba(239,68,68,0.5) 0,rgba(239,68,68,0.5) 3px,transparent 3px,transparent 7px);border-radius:1px;"></div>
+          <div style="position:absolute;top:30%;left:10%;font-size:8px;color:var(--red);white-space:nowrap;">4.5hr delay</div>
+          <div style="position:absolute;top:50%;transform:translateY(-50%);left:20%;width:10%;height:2px;background:rgba(0,212,200,0.3);border-radius:1px;"></div>
+          <div style="position:absolute;top:50%;transform:translateY(-50%);left:30%;width:18%;height:2px;background:repeating-linear-gradient(90deg,rgba(239,68,68,0.5) 0,rgba(239,68,68,0.5) 3px,transparent 3px,transparent 7px);border-radius:1px;"></div>
+          <div style="position:absolute;top:68%;left:34%;font-size:8px;color:var(--red);white-space:nowrap;">Missed follow-up</div>
+          <div style="position:absolute;top:50%;transform:translateY(-50%);left:48%;width:8%;height:2px;background:rgba(0,212,200,0.25);border-radius:1px;"></div>
+          <div style="position:absolute;top:50%;transform:translateY(-50%);left:56%;width:18%;height:2px;background:repeating-linear-gradient(90deg,rgba(239,68,68,0.5) 0,rgba(239,68,68,0.5) 3px,transparent 3px,transparent 7px);border-radius:1px;"></div>
+          <div style="position:absolute;top:30%;left:60%;font-size:8px;color:var(--red);white-space:nowrap;">Objection mishandled</div>
+          <div style="position:absolute;top:50%;transform:translateY(-50%);left:74%;width:8%;height:2px;background:rgba(0,212,200,0.15);border-radius:1px;"></div>
+          <!-- deal dies -->
+          <div style="position:absolute;top:35%;left:82%;transform:translateX(-50%);width:20px;height:20px;border-radius:50%;background:rgba(239,68,68,0.15);border:2px solid rgba(239,68,68,0.5);display:flex;align-items:center;justify-content:center;font-size:10px;">✗</div>
+          <div style="position:absolute;top:65%;left:82%;transform:translateX(-50%);font-size:8px;color:var(--red);white-space:nowrap;">Deal lost</div>
+          <!-- Lead node -->
+          <div style="position:absolute;top:50%;left:0;transform:translate(-50%,-50%);width:10px;height:10px;border-radius:50%;background:rgba(0,212,200,0.15);border:2px solid rgba(0,212,200,0.4);"></div>
+        </div>
+      </div>
+    </div>
+    <div class="diverge-note reveal d4">
+      <strong>The failure is structural, not individual.</strong> As lead volume grows, the gap between designed process and actual execution widens. Human discipline is the bottleneck — and it is unscalable by definition.
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════
+     S3 — CATEGORY
+══════════════════════════════════ -->
+<section class="section section-grid-bg" id="s3">
+  <div class="section-inner">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;">
+      <div>
+        <div class="eyebrow reveal">New Category</div>
+        <h2 class="section-h reveal d1">The missing<br>layer <em>filled.</em></h2>
+        <p class="section-desc reveal d2">Oper8er occupies the execution layer — the space between CRM and sales team where leads are worked, conversations happen, and deals are won or lost. A new category. A structural solution.</p>
+        <div style="margin-top:32px;display:flex;flex-direction:column;gap:8px;" class="reveal d3">
+          <div style="font-size:11px;color:var(--teal);font-weight:700;">Sales Execution Infrastructure is not:</div>
+          <div style="font-size:11px;color:var(--w40);display:flex;align-items:center;gap:8px;"><span style="color:var(--red);">✗</span> A CRM plugin or extension</div>
+          <div style="font-size:11px;color:var(--w40);display:flex;align-items:center;gap:8px;"><span style="color:var(--red);">✗</span> An AI chatbot or reply generator</div>
+          <div style="font-size:11px;color:var(--w40);display:flex;align-items:center;gap:8px;"><span style="color:var(--red);">✗</span> A marketing automation layer</div>
+          <div style="font-size:11px;color:var(--teal);display:flex;align-items:center;gap:8px;margin-top:6px;"><span style="color:var(--green);">✓</span> Enforcement infrastructure for revenue execution</div>
+        </div>
+      </div>
+      <div class="stack-wrap reveal d2" id="stack3">
+        <div class="stack-layer">
+          <div class="stack-label">Lead Generation</div>
+          <div class="stack-bar sb-marketing">Marketing Automation</div>
+        </div>
+        <div class="stack-layer">
+          <div class="stack-label">Pipeline Management</div>
+          <div class="stack-bar sb-crm">CRM Systems</div>
+        </div>
+        <div class="stack-layer">
+          <div class="stack-label" style="color:var(--teal);font-weight:700;">Execution Layer</div>
+          <div class="stack-bar sb-exec-filled" id="exec-filled-bar">
+            <div style="display:flex;align-items:center;gap:10px;position:relative;z-index:1;flex:1;">
+              <div style="width:28px;height:28px;border-radius:7px;background:rgba(0,212,200,0.1);border:1px solid rgba(0,212,200,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;font-weight:900;">O</div>
+              <div>
+                <div style="font-size:13px;font-weight:800;color:var(--teal);">Oper8er</div>
+                <div style="font-size:9px;color:rgba(0,212,200,0.6);">Sales Execution Infrastructure</div>
+              </div>
+              <span class="badge b-teal" style="margin-left:auto;">NEW CATEGORY</span>
+            </div>
+          </div>
+        </div>
+        <div class="stack-layer">
+          <div class="stack-label">Measurement</div>
+          <div class="stack-bar sb-analytics">Analytics &amp; Reporting</div>
+        </div>
+        <div class="stack-layer">
+          <div class="stack-label">Business Intelligence</div>
+          <div class="stack-bar sb-insights">Revenue Intelligence</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════
+     S4 — INTRODUCING OPER8ER
+══════════════════════════════════ -->
+<section class="section" id="s4">
+  <div class="section-inner" style="text-align:center;">
+    <div class="eyebrow reveal" style="justify-content:center;">Introducing</div>
+    <div class="intro-title reveal d1">OPER<span class="t-teal">8</span>ER</div>
+    <p class="intro-sub reveal d2" style="margin:24px auto 0;">Sales Execution Infrastructure for Revenue Teams</p>
+    <div class="intro-meta reveal d3" style="justify-content:center;">
+      <div class="intro-meta-item">
+        <div class="intro-meta-val">58<span style="font-size:14px;color:var(--w40);">sec</span></div>
+        <div class="intro-meta-label">Avg Response Time</div>
+      </div>
+      <div class="intro-meta-div"></div>
+      <div class="intro-meta-item">
+        <div class="intro-meta-val">82<span style="font-size:14px;color:var(--w40);">%</span></div>
+        <div class="intro-meta-label">Follow-Up Compliance</div>
+      </div>
+      <div class="intro-meta-div"></div>
+      <div class="intro-meta-item">
+        <div class="intro-meta-val">100<span style="font-size:14px;color:var(--w40);">%</span></div>
+        <div class="intro-meta-label">CRM Notes Structured</div>
+      </div>
+      <div class="intro-meta-div"></div>
+      <div class="intro-meta-item">
+        <div class="intro-meta-val">1,126</div>
+        <div class="intro-meta-label">Interactions Audited</div>
+      </div>
+    </div>
+    <div class="reveal d4" style="margin-top:48px;">
+      <div style="display:inline-flex;align-items:center;gap:6px;font-size:10px;color:var(--w20);border:1px solid var(--border);padding:6px 14px;border-radius:20px;">
+        <div class="glow-dot gd-teal" style="width:5px;height:5px;"></div>
+        Validated — Teton Motors, WY · 30-day live deployment
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════
+     S5 — FOUR-LAYER ARCHITECTURE
+══════════════════════════════════ -->
+<section class="section section-grid-bg" id="s5">
+  <div class="section-inner">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;">
+      <div>
+        <div class="eyebrow reveal">System Architecture</div>
+        <h2 class="section-h reveal d1">Four-layer<br><em>execution stack.</em></h2>
+        <p class="section-desc reveal d2">Not a feature set. A closed-loop system where every interaction improves the intelligence available to every future interaction.</p>
+        <div style="margin-top:32px;display:flex;flex-direction:column;gap:8px;" class="reveal d3">
+          <div style="padding:10px 14px;background:rgba(0,212,200,0.05);border-left:2px solid rgba(0,212,200,0.4);border-radius:0 6px 6px 0;font-size:11px;color:var(--w60);">A message arrives → the system guides the response → actions cascade → data is captured → intelligence surfaces for management.</div>
+        </div>
+      </div>
+      <div class="arch-diagram reveal d2" id="arch">
+        <div class="arch-layer d1">
+          <div class="arch-layer-box alb-conv">
+            <div class="arch-layer-num">L1</div>
+            <div class="arch-layer-name">Conversation Layer</div>
+            <div class="arch-layer-desc">Intent detection · Engine activation · Response guidance</div>
+          </div>
+        </div>
+        <div class="arch-connector"><div class="arch-connector-arrow"></div></div>
+        <div class="arch-layer d2">
+          <div class="arch-layer-box alb-exec">
+            <div class="arch-layer-num">L2</div>
+            <div class="arch-layer-name">Execution Layer</div>
+            <div class="arch-layer-desc">CRM automation · Follow-up scheduling · Next-step generation</div>
+          </div>
+        </div>
+        <div class="arch-connector"><div class="arch-connector-arrow"></div></div>
+        <div class="arch-layer d3">
+          <div class="arch-layer-box alb-telem">
+            <div class="arch-layer-num">L3</div>
+            <div class="arch-layer-name">Telemetry Layer</div>
+            <div class="arch-layer-desc">Response timing · Objection type · Handling method · Outcomes</div>
+          </div>
+        </div>
+        <div class="arch-connector"><div class="arch-connector-arrow"></div></div>
+        <div class="arch-layer d4">
+          <div class="arch-layer-box alb-intel">
+            <div class="arch-layer-num">L4</div>
+            <div class="arch-layer-name">Intelligence Layer</div>
+            <div class="arch-layer-desc">Deal scores · Rep rankings · Failure patterns · Benchmarks</div>
+          </div>
+        </div>
+        <div style="width:100%;max-width:820px;margin-top:12px;padding:10px 16px;background:rgba(167,139,250,0.05);border:1px dashed rgba(167,139,250,0.2);border-radius:8px;text-align:center;font-size:10px;color:rgba(167,139,250,0.7);">
+          ↑ Intelligence feeds back to Conversation Layer — closed loop
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════
+     S6 — ENGINE SYSTEM
+══════════════════════════════════ -->
+<section class="section" id="s6">
+  <div class="section-inner">
+    <div style="text-align:center;margin-bottom:48px;">
+      <div class="eyebrow reveal" style="justify-content:center;">Engine System</div>
+      <h2 class="section-h reveal d1">Not one AI.<br><em>Five specialized engines.</em></h2>
+      <p class="section-desc reveal d2" style="margin:16px auto 0;">Each engine is a specialized execution protocol. The system detects the conversation context and activates the correct protocol automatically.</p>
+    </div>
+    <div class="engine-system" id="eng-sys">
+      <!-- SVG connecting lines -->
+      <svg class="engine-svg" id="eng-svg" viewBox="0 0 900 480" preserveAspectRatio="xMidYMid meet"></svg>
+      <!-- Center node -->
+      <div class="engine-center">
+        <div class="engine-center-title">Execution<br>Analysis</div>
+        <div class="engine-center-sub">Context Detection</div>
+      </div>
+      <!-- 5 engine nodes, positioned by JS -->
+      <div class="engine-node" id="en0">
+        <div class="engine-node-num">E01</div>
+        <div class="engine-node-name">Appointment Engine</div>
+        <div class="engine-node-trigger">Activates when scheduling signals or vague commitment detected</div>
+      </div>
+      <div class="engine-node" id="en1">
+        <div class="engine-node-num">E02</div>
+        <div class="engine-node-name">Objection Engine</div>
+        <div class="engine-node-trigger">Activates when friction, hesitation, or stalling language detected</div>
+      </div>
+      <div class="engine-node" id="en2">
+        <div class="engine-node-num">E03</div>
+        <div class="engine-node-name">Follow-Up Engine</div>
+        <div class="engine-node-trigger">Activates when lead silence exceeds cadence threshold</div>
+      </div>
+      <div class="engine-node" id="en3">
+        <div class="engine-node-num">E04</div>
+        <div class="engine-node-name">Qualification Engine</div>
+        <div class="engine-node-trigger">Activates when buyer context is insufficient to advance the deal</div>
+      </div>
+      <div class="engine-node" id="en4">
+        <div class="engine-node-num">E05</div>
+        <div class="engine-node-name">Lead Recovery Engine</div>
+        <div class="engine-node-trigger">Activates when lead is dormant beyond cadence and not marked lost</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════
+     S7 — EXECUTION PIPELINE
+══════════════════════════════════ -->
+<section class="section section-grid-bg" id="s7">
+  <div class="section-inner">
+    <div style="text-align:center;margin-bottom:40px;">
+      <div class="eyebrow reveal" style="justify-content:center;">Execution Pipeline</div>
+      <h2 class="section-h reveal d1">One action.<br><em>Four operational outputs.</em></h2>
+    </div>
+    <div class="pipeline-flow reveal d2">
+      <div class="pipeline-main">
+        <div class="pf-node">
+          <div class="pf-box pfb-teal">
+            <span class="pf-icon">📩</span>
+            <div class="pf-name">Inbound Message</div>
+          </div>
+        </div>
+        <div class="pf-arrow"><div class="pf-arrow-line"></div></div>
+        <div class="pf-node">
+          <div class="pf-box pfb-teal">
+            <span class="pf-icon">🔍</span>
+            <div class="pf-name">Intent Detection</div>
+          </div>
+        </div>
+        <div class="pf-arrow"><div class="pf-arrow-line"></div></div>
+        <div class="pf-node">
+          <div class="pf-box pfb-lime">
+            <span class="pf-icon">⚡</span>
+            <div class="pf-name">Engine Activated</div>
+          </div>
+        </div>
+        <div class="pf-arrow"><div class="pf-arrow-line"></div></div>
+        <div class="pf-node">
+          <div class="pf-box pfb-teal">
+            <span class="pf-icon">💬</span>
+            <div class="pf-name">Response Generated</div>
+          </div>
+        </div>
+        <div class="pf-arrow"><div class="pf-arrow-line"></div></div>
+        <div class="pf-node">
+          <div class="pf-box pfb-lime">
+            <span class="pf-icon">✅</span>
+            <div class="pf-name">Rep Sends</div>
+          </div>
+        </div>
+        <div class="pf-arrow"><div class="pf-arrow-line"></div></div>
+        <div class="pf-node">
+          <div class="pf-box pfb-purple" id="cascade-trigger-node">
+            <span class="pf-icon">⚙</span>
+            <div class="pf-name">Cascade Fires</div>
+          </div>
+        </div>
+      </div>
+      <!-- Cascade outputs -->
+      <div class="pipeline-cascade" id="pipe-cascade">
+        <div class="cascade-connector-area">
+          <div class="cascade-vert"></div>
+          <div style="display:flex;align-items:flex-start;gap:0;">
+            <div style="display:flex;flex-direction:column;align-items:center;">
+              <div style="display:flex;height:20px;align-items:center;">
+                <div style="width:130px;height:1.5px;background:rgba(0,212,200,0.2);"></div>
+                <div style="width:130px;height:1.5px;background:rgba(200,224,50,0.2);"></div>
+                <div style="width:130px;height:1.5px;background:rgba(167,139,250,0.2);"></div>
+                <div style="width:130px;height:1.5px;background:rgba(34,197,94,0.2);"></div>
+              </div>
+              <div style="display:flex;gap:16px;">
+                <div class="cascade-branch">
+                  <div class="cascade-branch-line" style="background:rgba(0,212,200,0.3);"></div>
+                  <div class="cascade-out-card co-teal">
+                    <div class="cascade-out-title">CRM Note Generated</div>
+                    <div class="cascade-out-sub">5-field structured schema. Auto-logged.</div>
+                  </div>
+                </div>
+                <div class="cascade-branch">
+                  <div class="cascade-branch-line" style="background:rgba(200,224,50,0.3);"></div>
+                  <div class="cascade-out-card co-lime">
+                    <div class="cascade-out-title">Deal Tracker Updated</div>
+                    <div class="cascade-out-sub">Momentum score recalculated.</div>
+                  </div>
+                </div>
+                <div class="cascade-branch">
+                  <div class="cascade-branch-line" style="background:rgba(167,139,250,0.3);"></div>
+                  <div class="cascade-out-card co-purple">
+                    <div class="cascade-out-title">Follow-Up Scheduled</div>
+                    <div class="cascade-out-sub">4-tier cadence queued. Zero rep effort.</div>
+                  </div>
+                </div>
+                <div class="cascade-branch">
+                  <div class="cascade-branch-line" style="background:rgba(34,197,94,0.3);"></div>
+                  <div class="cascade-out-card co-green">
+                    <div class="cascade-out-title">Telemetry Event</div>
+                    <div class="cascade-out-sub">Execution recorded. Feeds intelligence.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════
+     S8 — LIVE DEMO
+══════════════════════════════════ -->
+<section class="section" id="s8">
+  <div class="section-inner">
+    <div style="text-align:center;margin-bottom:36px;">
+      <div class="eyebrow reveal" style="justify-content:center;">System Demonstration</div>
+      <h2 class="section-h reveal d1">The system <em>in action.</em></h2>
+    </div>
+    <div class="demo-grid">
+      <div class="demo-left">
+        <div class="inbound-card reveal">
+          <div class="inbound-label">Inbound Message</div>
+          <div class="inbound-bubble">"This isn't really a priority right now. We're happy with how things are going."</div>
+          <div class="inbound-meta"><span>Sarah Chen · Lead #4,281</span><span>Received 2:14pm</span></div>
+        </div>
+        <div class="panel reveal d1" style="border-top:2px solid var(--teal);">
+          <div class="panel-hd"><span class="panel-title">Intent Detection</span><span class="badge b-teal">Processing</span></div>
+          <div class="panel-bd">
+            <div class="detect-rows">
+              <div class="det-row"><span class="det-label">Priority Objection</span><span class="det-val dv-hot">DETECTED</span></div>
+              <div class="det-row"><span class="det-label">Stalling Language</span><span class="det-val dv-hot">DETECTED</span></div>
+              <div class="det-row"><span class="det-label">Price Signal</span><span class="det-val dv-ok">ABSENT</span></div>
+              <div class="det-row"><span class="det-label">Scheduling Readiness</span><span class="det-val dv-med">LOW</span></div>
+              <div class="det-row"><span class="det-label">Conversation Stage</span><span class="det-val dv-hot">OBJECTION PHASE</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="panel reveal d2" style="border-top:2px solid var(--lime);">
+          <div class="panel-hd"><span class="panel-title">Engine Selection</span><span class="badge b-lime">Activated</span></div>
+          <div class="panel-bd">
+            <div class="engine-active-card">
+              <div class="ea-icon">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 1L2 5.5v9h12v-9L8 1z" stroke="#c8e032" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 14.5v-5h4v5" stroke="#c8e032" stroke-width="1.4" stroke-linecap="round"/></svg>
+              </div>
+              <div><div class="ea-name">Objection Engine</div><div class="ea-sub">Priority objection redirect · Active</div></div>
+              <span class="badge b-lime" style="margin-left:auto;">ACTIVE</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="demo-right">
+        <div class="response-card reveal d1">
+          <div class="inbound-label" style="margin-bottom:10px;">Response Guidance</div>
+          <div class="resp-bad-wrap">
+            <div class="rb-label">✗ Without Oper8er</div>
+            <div class="rb-text">"No problem, reach out whenever you're ready!"</div>
+          </div>
+          <div class="resp-good-wrap">
+            <div class="rg-label">✓ Objection Engine Response</div>
+            <div class="rg-text">"Totally fair. Most teams think that until they see how many conversations die after the first reply because no one follows up consistently. If we could show you that pattern in 10 minutes Monday, would it be worth a quick look?"</div>
+            <div class="resp-tags">
+              <span class="resp-tag">No Concession</span>
+              <span class="resp-tag">Pattern Proof</span>
+              <span class="resp-tag">Binary Ask</span>
+              <span class="resp-tag">Appointment Redirect</span>
+            </div>
+          </div>
+          <button id="send-btn">Send Response →</button>
+        </div>
+        <div class="cascade-fire" id="cascade-fire-demo">
+          <div class="cf-title">Automation Cascade — Fired</div>
+          <div class="cf-item"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" fill="rgba(0,212,200,0.15)"/><path d="M3 6l2 2 4-4" stroke="#00d4c8" stroke-width="1.3" stroke-linecap="round"/></svg>CRM note structured and logged — objection: priority</div>
+          <div class="cf-item"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" fill="rgba(167,139,250,0.15)"/><path d="M3 6l2 2 4-4" stroke="#a78bfa" stroke-width="1.3" stroke-linecap="round"/></svg>Deal Momentum Score updated — 78/100 · Recovering</div>
+          <div class="cf-item"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" fill="rgba(200,224,50,0.15)"/><path d="M3 6l2 2 4-4" stroke="#c8e032" stroke-width="1.3" stroke-linecap="round"/></svg>24hr follow-up queued — Tier 1 sequence activated</div>
+          <div class="cf-item"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" fill="rgba(34,197,94,0.15)"/><path d="M3 6l2 2 4-4" stroke="#22c55e" stroke-width="1.3" stroke-linecap="round"/></svg>Telemetry event #4281-OBJ recorded — feeds intelligence layer</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════
+     S9 — MANAGER DASHBOARD
+══════════════════════════════════ -->
+<section class="section section-grid-bg" id="s9">
+  <div class="section-inner">
+    <div style="margin-bottom:36px;">
+      <div class="eyebrow reveal">Management Intelligence</div>
+      <h2 class="section-h reveal d1">Execution data.<br><em>Management clarity.</em></h2>
+    </div>
+    <div class="dashboard-grid">
+      <div class="dash-col">
+        <div class="panel reveal">
+          <div class="panel-hd"><span class="panel-title">Deal Momentum Scores</span><span class="badge b-teal">Live</span></div>
+          <div class="panel-bd" style="display:flex;flex-direction:column;gap:6px;">
+            <div class="deal-row dr-h"><div class="dr-nm"><div class="dr-pn">Mike Brennan · F-150</div><div class="dr-sg">Fast response ✓ · Appt confirmed ✓ · CRM ✓</div></div><span class="badge b-green">Healthy</span><div class="dr-sc">91</div></div>
+            <div class="deal-row dr-r"><div class="dr-nm"><div class="dr-pn">Sarah Chen · Priority Obj.</div><div class="dr-sg">Objection handled ✓ · Appt pending ⚠</div></div><span class="badge b-amber">At Risk</span><div class="dr-sc">78</div></div>
+            <div class="deal-row dr-r"><div class="dr-nm"><div class="dr-pn">Jessica Torres · Lease</div><div class="dr-sg">Tier 2 follow-up ✓ · Quote pending ⚠</div></div><span class="badge b-amber">At Risk</span><div class="dr-sc">62</div></div>
+            <div class="deal-row dr-c"><div class="dr-nm"><div class="dr-pn">David Park · Explorer</div><div class="dr-sg">Response delay ✗ · No follow-up 48hr ✗</div></div><span class="badge b-red">Critical</span><div class="dr-sc">31</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="dash-col">
+        <div class="panel reveal d1">
+          <div class="panel-hd"><span class="panel-title">Rep Execution Rankings</span><span class="badge b-purple">This Month</span></div>
+          <div class="panel-bd" style="display:flex;flex-direction:column;gap:5px;">
+            <div class="rep-row" style="background:rgba(200,224,50,0.04);border-color:rgba(200,224,50,0.1);"><div class="rr-rank">#1</div><div class="rr-av" style="background:linear-gradient(135deg,#c8e032,#65a30d);">J</div><div class="rr-name">Jake M.</div><div class="rr-bar-wrap" style="width:70px;"><div class="rr-bar" style="width:96%;background:var(--lime);"></div></div><div class="rr-score" style="color:var(--lime);">96</div></div>
+            <div class="rep-row"><div class="rr-rank">#2</div><div class="rr-av" style="background:linear-gradient(135deg,var(--teal),#0ea5e9);">A</div><div class="rr-name">Amy F.</div><div class="rr-bar-wrap" style="width:70px;"><div class="rr-bar" style="width:88%;"></div></div><div class="rr-score" style="color:var(--teal);">88</div></div>
+            <div class="rep-row"><div class="rr-rank">#3</div><div class="rr-av" style="background:linear-gradient(135deg,var(--purple),#6d28d9);">C</div><div class="rr-name">Carlos R.</div><div class="rr-bar-wrap" style="width:70px;"><div class="rr-bar" style="width:74%;"></div></div><div class="rr-score" style="color:var(--purple);">74</div></div>
+            <div class="rep-row" style="background:rgba(239,68,68,0.04);border-color:rgba(239,68,68,0.1);"><div class="rr-rank">#4</div><div class="rr-av" style="background:linear-gradient(135deg,var(--red),#b91c1c);">D</div><div class="rr-name">David P.</div><div class="rr-bar-wrap" style="width:70px;"><div class="rr-bar" style="width:38%;background:var(--red);"></div></div><div class="rr-score" style="color:var(--red);">38</div></div>
+          </div>
+        </div>
+        <div class="panel reveal d2">
+          <div class="panel-hd"><span class="panel-title">Pipeline Health</span></div>
+          <div class="panel-bd" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+            <div class="metric-card"><div class="mc-val" style="color:var(--green);">8</div><div class="mc-lbl">Healthy</div></div>
+            <div class="metric-card"><div class="mc-val" style="color:var(--amber);">5</div><div class="mc-lbl">At Risk</div></div>
+            <div class="metric-card"><div class="mc-val" style="color:var(--red);">2</div><div class="mc-lbl">Critical</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="dash-col">
+        <div class="panel reveal d2">
+          <div class="panel-hd"><span class="panel-title">Execution Metrics</span><span class="badge b-teal">30-Day</span></div>
+          <div class="panel-bd" style="display:flex;flex-direction:column;gap:8px;">
+            <div class="metric-card"><div class="mc-val" style="color:var(--teal);">58<span style="font-size:14px;">sec</span></div><div class="mc-lbl">Avg Response Time</div><div class="mc-d" style="color:var(--green);">↓ from 4.2 hours</div></div>
+            <div class="metric-card"><div class="mc-val" style="color:var(--lime);">82<span style="font-size:14px;">%</span></div><div class="mc-lbl">Follow-Up Compliance</div><div class="mc-d" style="color:var(--green);">↑ from 35%</div></div>
+            <div class="metric-card"><div class="mc-val" style="color:var(--purple);">100<span style="font-size:14px;">%</span></div><div class="mc-lbl">CRM Notes Structured</div><div class="mc-d" style="color:var(--green);">↑ from 40%</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════
+     S10 — DEAL AUTOPSY
+══════════════════════════════════ -->
+<section class="section" id="s10">
+  <div class="section-inner">
+    <div style="margin-bottom:36px;">
+      <div class="eyebrow reveal">Forensic Intelligence</div>
+      <h2 class="section-h reveal d1">When a deal dies,<br><em>the system knows why.</em></h2>
+    </div>
+    <div class="autopsy-layout">
+      <div class="reveal">
+        <div style="padding:14px 18px;background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.14);border-top:2px solid var(--red);border-radius:12px;margin-bottom:16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <div style="font-size:14px;font-weight:800;color:var(--white);">Lost Deal: David Park · Explorer XLT</div>
+            <span class="badge b-red">Lost · Day 9</span>
+          </div>
+          <div style="font-size:10px;color:var(--w40);">Rep reported: "Customer decided to wait." — <strong style="color:var(--red);">3 execution failures identified</strong></div>
+        </div>
+        <div class="tl">
+          <div class="tl-ev"><div class="tl-dt tl-ok"></div><div class="tl-tm">Day 1 · 9:12am</div><div class="tl-tx">Lead arrived via web form. Entered rep queue.</div></div>
+          <div class="tl-ev"><div class="tl-dt tl-wn"></div><div class="tl-tm">Day 1 · 1:47pm</div><div class="tl-tx"><span class="tl-fail-label">Failure 1 — 4hr 35min response delay.</span> Lead contacted well outside 5-minute conversion window.</div></div>
+          <div class="tl-ev"><div class="tl-dt tl-wn"></div><div class="tl-tm">Day 1 · 2:04pm</div><div class="tl-tx">Customer asked about pricing. <span class="tl-fail-label">Failure 2 — Discount offered instead of appointment redirect.</span></div></div>
+          <div class="tl-ev"><div class="tl-dt tl-fl"></div><div class="tl-tm">Day 3 · —</div><div class="tl-tx"><span class="tl-fail-label">Failure 3 — No follow-up sent.</span> 48-hour window missed. Lead went cold.</div></div>
+          <div class="tl-ev"><div class="tl-dt tl-fl"></div><div class="tl-tm">Day 9 · —</div><div class="tl-tx">Marked lost. Root cause invisible in CRM notes. Pattern repeats.</div></div>
+        </div>
+        <div class="root-box">
+          <div class="root-lbl">Root Cause — Identified by System</div>
+          <div class="root-txt">3 execution failures, none visible in CRM. Rep-reported reason masks all three. Without the autopsy engine, this pattern repeats with every lead this rep works.</div>
+        </div>
+      </div>
+      <div class="reveal d1">
+        <div class="panel" style="margin-bottom:16px;">
+          <div class="panel-hd"><span class="panel-title">Organizational Failure Patterns</span><span class="badge b-teal">1,126 Interactions</span></div>
+          <div class="panel-bd" id="failure-bars">
+            <div class="failure-bars">
+              <div class="fb-row"><div class="fb-label">Lost deals — no 48hr follow-up<span>40%</span></div><div class="fb-track"><div class="fb-fill" data-w="40"></div></div></div>
+              <div class="fb-row"><div class="fb-label">Died after response delay &gt;4hr<span>23%</span></div><div class="fb-track"><div class="fb-fill" data-w="23"></div></div></div>
+              <div class="fb-row"><div class="fb-label">Died after objection mishandled<span>18%</span></div><div class="fb-track"><div class="fb-fill" data-w="18"></div></div></div>
+              <div class="fb-row"><div class="fb-label">CRM incomplete at loss<span>61%</span></div><div class="fb-track"><div class="fb-fill" data-w="61"></div></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="before-after">
+          <div class="ba-item ba-bad"><div class="ba-lbl">Without Oper8er</div><div class="ba-txt">4.5hr response → discount offered → no follow-up → marked lost → pattern repeats</div></div>
+          <div class="ba-item ba-good"><div class="ba-lbl">With Oper8er</div><div class="ba-txt">58sec response → objection redirect → follow-up queued → appointment sought → pattern enforced</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════
+     S11 — PLATFORM EXPANSION
+══════════════════════════════════ -->
+<section class="section section-grid-bg" id="s11">
+  <div class="section-inner">
+    <div style="text-align:center;margin-bottom:48px;">
+      <div class="eyebrow reveal" style="justify-content:center;">Platform Vision</div>
+      <h2 class="section-h reveal d1">Horizontal platform.<br><em>Vertical deployments.</em></h2>
+      <p class="section-desc reveal d2" style="margin:16px auto 0;">The four-layer execution stack is not automotive-specific. Each vertical is a new implementation on shared infrastructure — a new customer base, new telemetry, new industry benchmarks.</p>
+    </div>
+    <div class="platform-diagram">
+      <!-- Verticals top -->
+      <div class="platform-verticals reveal d1">
+        <div class="pv-card primary"><div class="pv-name">Oper8er Automotive</div><div class="pv-status live">● Live</div></div>
+        <div class="pv-card"><div class="pv-name">Oper8er Solar</div><div class="pv-status">○ Coming</div></div>
+        <div class="pv-card"><div class="pv-name">Oper8er Insurance</div><div class="pv-status">○ Coming</div></div>
+        <div class="pv-card"><div class="pv-name">Oper8er Wealth</div><div class="pv-status">○ Coming</div></div>
+        <div class="pv-card"><div class="pv-name">Oper8er Real Estate</div><div class="pv-status">○ Coming</div></div>
+      </div>
+      <!-- SVG connector -->
+      <div style="display:flex;justify-content:center;padding:0;" class="reveal d2">
+        <svg width="600" height="60" viewBox="0 0 600 60">
+          <line x1="300" y1="0" x2="300" y2="25" stroke="rgba(0,212,200,0.3)" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <line x1="60" y1="25" x2="540" y2="25" stroke="rgba(0,212,200,0.2)" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <line x1="60" y1="25" x2="60" y2="60" stroke="rgba(0,212,200,0.2)" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <line x1="180" y1="25" x2="180" y2="60" stroke="rgba(0,212,200,0.2)" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <line x1="300" y1="25" x2="300" y2="60" stroke="rgba(0,212,200,0.3)" stroke-width="2"/>
+          <line x1="420" y1="25" x2="420" y2="60" stroke="rgba(0,212,200,0.2)" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <line x1="540" y1="25" x2="540" y2="60" stroke="rgba(0,212,200,0.2)" stroke-width="1.5" stroke-dasharray="4 3"/>
+        </svg>
+      </div>
+      <!-- Core platform -->
+      <div class="platform-core reveal d2">
+        <div class="pc-title">YENES EXECUTION PLATFORM</div>
+        <div class="pc-sub">Four-Layer Execution Stack · Industry Agnostic</div>
+        <div class="pc-data">
+          <div class="pc-data-item"><div class="pc-data-val">L4</div><div class="pc-data-lbl">System Layers</div></div>
+          <div style="width:1px;height:30px;background:var(--bt);"></div>
+          <div class="pc-data-item"><div class="pc-data-val">5</div><div class="pc-data-lbl">Engines</div></div>
+          <div style="width:1px;height:30px;background:var(--bt);"></div>
+          <div class="pc-data-item"><div class="pc-data-val">∞</div><div class="pc-data-lbl">Verticals</div></div>
+        </div>
+      </div>
+      <!-- SVG connector down -->
+      <div style="display:flex;justify-content:center;" class="reveal d3">
+        <svg width="200" height="40" viewBox="0 0 200 40">
+          <line x1="100" y1="0" x2="100" y2="15" stroke="rgba(0,212,200,0.3)" stroke-width="1.5"/>
+          <line x1="30" y1="15" x2="170" y2="15" stroke="rgba(0,212,200,0.2)" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <line x1="30" y1="15" x2="30" y2="40" stroke="rgba(0,212,200,0.2)" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <line x1="100" y1="15" x2="100" y2="40" stroke="rgba(0,212,200,0.2)" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <line x1="170" y1="15" x2="170" y2="40" stroke="rgba(0,212,200,0.2)" stroke-width="1.5" stroke-dasharray="4 3"/>
+        </svg>
+      </div>
+      <!-- Shared dataset -->
+      <div class="platform-bottom reveal d3">
+        <div class="pb-card">Execution Telemetry Dataset</div>
+        <div class="pb-card">Industry Benchmark Network</div>
+        <div class="pb-card">Cross-Vertical Intelligence</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════
+     S12 — DATA FLYWHEEL
+══════════════════════════════════ -->
+<section class="section" id="s12">
+  <div class="section-inner" style="display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;">
+    <div>
+      <div class="eyebrow reveal">Strategic Moat</div>
+      <h2 class="section-h reveal d1">The execution<br><em>data flywheel.</em></h2>
+      <p class="section-desc reveal d2">Every deployment generates structured execution telemetry that doesn't exist anywhere else. As deployments grow, the data compounds — improving the product for every customer, and creating a dataset that no competitor can replicate retroactively.</p>
+      <div style="margin-top:28px;display:flex;flex-direction:column;gap:10px;" class="reveal d3">
+        <div style="font-size:11px;color:var(--w40);padding:10px 14px;background:rgba(0,212,200,0.04);border-left:2px solid rgba(0,212,200,0.3);border-radius:0 6px 6px 0;line-height:1.6;">The execution telemetry dataset becomes a moat that deepens with every customer. A competitor entering the market would need to build a comparable customer base and operate for a comparable duration — by which time the advantage has compounded further.</div>
+      </div>
+    </div>
+    <div class="flywheel-wrap reveal d1" id="flywheel">
+      <svg class="flywheel-svg" id="fw-svg" viewBox="0 0 500 500">
+        <!-- Circular track -->
+        <circle cx="250" cy="250" r="170" fill="none" stroke="rgba(0,212,200,0.08)" stroke-width="1.5" stroke-dasharray="6 4"/>
+        <!-- Animated particle -->
+        <circle id="fw-particle" cx="250" cy="80" r="3" fill="var(--teal)" opacity="0.8">
+          <animateMotion dur="6s" repeatCount="indefinite" calcMode="linear">
+            <mpath href="#fw-path"/>
+          </animateMotion>
+        </circle>
+        <path id="fw-path" d="M 250,80 A 170,170 0 1,1 249.99,80" fill="none"/>
+        <!-- Glow on track -->
+        <circle cx="250" cy="250" r="170" fill="none" stroke="rgba(0,212,200,0.04)" stroke-width="8" stroke-dasharray="40 300">
+          <animateTransform attributeName="transform" type="rotate" from="0 250 250" to="360 250 250" dur="6s" repeatCount="indefinite"/>
+        </circle>
+      </svg>
+      <!-- 6 flywheel nodes positioned in circle -->
+      <div class="fw-node" id="fw0" style="top:14%;left:50%;"><div class="fw-node-num">01</div><div class="fw-node-name">Deployments</div><div class="fw-node-desc">Each new location added</div></div>
+      <div class="fw-node" id="fw1" style="top:32%;left:84%;"><div class="fw-node-num">02</div><div class="fw-node-name">Execution Data</div><div class="fw-node-desc">Structured telemetry captured</div></div>
+      <div class="fw-node" id="fw2" style="top:68%;left:84%;"><div class="fw-node-num">03</div><div class="fw-node-name">Pattern Intelligence</div><div class="fw-node-desc">Cross-deployment insights emerge</div></div>
+      <div class="fw-node" id="fw3" style="top:82%;left:50%;"><div class="fw-node-num">04</div><div class="fw-node-name">Better Guidance</div><div class="fw-node-desc">Response quality improves</div></div>
+      <div class="fw-node" id="fw4" style="top:68%;left:16%;"><div class="fw-node-num">05</div><div class="fw-node-name">Better Outcomes</div><div class="fw-node-desc">Customer results improve</div></div>
+      <div class="fw-node" id="fw5" style="top:32%;left:16%;"><div class="fw-node-num">06</div><div class="fw-node-name">More Deployments</div><div class="fw-node-desc">Referrals and case studies</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════
+     S13 — CONVERSATION
+══════════════════════════════════ -->
+<section class="section" id="s13">
+  <div class="section-inner">
+    <div class="final-wrap">
+      <div class="final-logo reveal">OPER<span>8</span>ER</div>
+      <div class="final-byline reveal d1">by YENES · Sales Execution Infrastructure</div>
+      <div class="final-q reveal d2">
+        "What would <em>execution intelligence</em> look like<br>in your world?"
+      </div>
+      <div class="final-meta reveal d3">
+        <div class="final-contact"><strong>hello@yenes.ai</strong></div>
+        <div class="final-divider"></div>
+        <div class="final-contact"><strong>+1 (307) 690-0291</strong></div>
+        <div class="final-divider"></div>
+        <div class="final-contact">Jackson, WY · <strong>yenes.ai</strong></div>
+      </div>
+      <div style="margin-top:40px;" class="reveal d4">
+        <div style="display:inline-flex;align-items:center;gap:10px;padding:14px 28px;background:rgba(200,224,50,0.06);border:1px solid rgba(200,224,50,0.2);border-radius:50px;cursor:pointer;font-size:12px;font-weight:800;color:var(--lime);letter-spacing:0.5px;transition:background 0.2s;"
+          onmouseover="this.style.background='rgba(200,224,50,0.12)'"
+          onmouseout="this.style.background='rgba(200,224,50,0.06)'">
+          Start the 30-Day Execution Audit — Free
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="#c8e032" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+(function(){
+  // ── NAV DOTS ──
+  var sections = document.querySelectorAll('.section');
+  var navDots = document.getElementById('nav-dots');
+  var nav = document.getElementById('nav');
+  var progressBar = document.getElementById('progress-bar');
+  var total = sections.length;
+
+  sections.forEach(function(s, i){
+    var d = document.createElement('div');
+    d.className = 'nav-dot' + (i === 0 ? ' active' : '');
+    d.addEventListener('click', function(){
+      s.scrollIntoView({ behavior: 'smooth' });
+    });
+    navDots.appendChild(d);
+  });
+
+  // ── SCROLL HANDLER ──
+  var dots = navDots.querySelectorAll('.nav-dot');
+  var ticking = false;
+
+  function onScroll(){
+    if(ticking) return;
+    ticking = true;
+    requestAnimationFrame(function(){
+      var scrollTop = window.scrollY;
+      var docH = document.documentElement.scrollHeight - window.innerHeight;
+      var pct = docH > 0 ? (scrollTop / docH) * 100 : 0;
+      progressBar.style.width = pct + '%';
+
+      // Nav bg
+      nav.classList.toggle('scrolled', scrollTop > 60);
+
+      // Active section
+      var current = 0;
+      sections.forEach(function(s, i){
+        var rect = s.getBoundingClientRect();
+        if(rect.top <= window.innerHeight * 0.5) current = i;
+      });
+      dots.forEach(function(d, i){ d.classList.toggle('active', i === current); });
+
+      ticking = false;
+    });
+  }
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+
+  // ── REVEAL OBSERVER ──
+  var ro = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){
+        e.target.classList.add('vis');
+        ro.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.12 });
+
+  document.querySelectorAll('.reveal, .reveal-left, .reveal-right').forEach(function(el){ ro.observe(el); });
+
+  // ── GAP HIGHLIGHT ──
+  var gapBar = document.getElementById('gap-bar');
+  var gapObs = new IntersectionObserver(function(entries){
+    if(entries[0].isIntersecting){
+      setTimeout(function(){ gapBar.classList.add('active-gap'); }, 800);
+      gapObs.disconnect();
+    }
+  }, { threshold: 0.5 });
+  var s1 = document.getElementById('s1');
+  if(s1) gapObs.observe(s1);
+
+  // ── ENGINE NODES POSITIONING ──
+  function positionEngines(){
+    var sys = document.getElementById('eng-sys');
+    var svg = document.getElementById('eng-svg');
+    if(!sys || !svg) return;
+    var W = sys.offsetWidth, H = sys.offsetHeight;
+    var cx = W/2, cy = H/2;
+    var r = Math.min(W, H) * 0.37;
+    var nodes = [document.getElementById('en0'), document.getElementById('en1'), document.getElementById('en2'), document.getElementById('en3'), document.getElementById('en4')];
+    var angles = [-90, -90 + 72, -90 + 144, -90 + 216, -90 + 288];
+
+    var svgLines = '';
+    nodes.forEach(function(n, i){
+      var ang = angles[i] * Math.PI / 180;
+      var nx = cx + r * Math.cos(ang);
+      var ny = cy + r * Math.sin(ang);
+      n.style.left = (nx - 60) + 'px';
+      n.style.top  = (ny - n.offsetHeight/2) + 'px';
+      svgLines += '<line x1="' + cx + '" y1="' + cy + '" x2="' + nx + '" y2="' + ny + '" stroke="rgba(0,212,200,0.15)" stroke-width="1.5" stroke-dasharray="5 4"/>';
+      svgLines += '<circle cx="' + nx + '" cy="' + ny + '" r="3" fill="rgba(0,212,200,0.3)"/>';
+    });
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    svg.innerHTML = svgLines;
+  }
+
+  // Engine node reveal + animation
+  var engObs = new IntersectionObserver(function(entries){
+    if(entries[0].isIntersecting){
+      positionEngines();
+      var nodes = [document.getElementById('en0'),document.getElementById('en1'),document.getElementById('en2'),document.getElementById('en3'),document.getElementById('en4')];
+      nodes.forEach(function(n, i){
+        setTimeout(function(){ n.classList.add('vis'); }, 300 + i * 180);
+      });
+
+      // Animate active highlight cycling
+      var activeIdx = 0;
+      setInterval(function(){
+        nodes.forEach(function(n){ n.classList.remove('active-engine'); n.style.borderColor = ''; n.style.boxShadow = ''; });
+        nodes[activeIdx].style.borderColor = 'rgba(0,212,200,0.45)';
+        nodes[activeIdx].style.boxShadow = '0 0 24px rgba(0,212,200,0.15)';
+        activeIdx = (activeIdx + 1) % 5;
+      }, 1400);
+
+      engObs.disconnect();
+    }
+  }, { threshold: 0.3 });
+  var s6 = document.getElementById('s6');
+  if(s6) engObs.observe(s6);
+  window.addEventListener('resize', positionEngines);
+
+  // ── PIPELINE CASCADE ──
+  var pipeObs = new IntersectionObserver(function(entries){
+    if(entries[0].isIntersecting){
+      var cascade = document.getElementById('pipe-cascade');
+      setTimeout(function(){ cascade.classList.add('active'); }, 1200);
+      pipeObs.disconnect();
+    }
+  }, { threshold: 0.4 });
+  var s7 = document.getElementById('s7');
+  if(s7) pipeObs.observe(s7);
+
+  // ── SEND BUTTON ──
+  document.getElementById('send-btn').addEventListener('click', function(){
+    var cascadeFire = document.getElementById('cascade-fire-demo');
+    cascadeFire.classList.add('active');
+    this.textContent = '✓ Sent — Cascade Fired';
+    this.style.background = 'rgba(34,197,94,0.15)';
+    this.style.color = 'var(--green)';
+    this.style.border = '1px solid rgba(34,197,94,0.2)';
+  });
+
+  // ── FAILURE BARS ──
+  var fbObs = new IntersectionObserver(function(entries){
+    if(entries[0].isIntersecting){
+      document.querySelectorAll('.fb-fill').forEach(function(el){
+        setTimeout(function(){ el.style.width = el.dataset.w + '%'; }, 200);
+      });
+      fbObs.disconnect();
+    }
+  }, { threshold: 0.3 });
+  var fbEl = document.getElementById('failure-bars');
+  if(fbEl) fbObs.observe(fbEl);
+
+  // ── FLYWHEEL ACTIVE CYCLE ──
+  var fwObs = new IntersectionObserver(function(entries){
+    if(entries[0].isIntersecting){
+      var nodes = ['fw0','fw1','fw2','fw3','fw4','fw5'].map(function(id){ return document.getElementById(id); });
+      var idx = 0;
+      setInterval(function(){
+        nodes.forEach(function(n){ n.classList.remove('active-fw'); });
+        nodes[idx].classList.add('active-fw');
+        idx = (idx + 1) % 6;
+      }, 1000);
+      fwObs.disconnect();
+    }
+  }, { threshold: 0.3 });
+  var s12 = document.getElementById('s12');
+  if(s12) fwObs.observe(s12);
+
+  // ── KEYBOARD NAV ──
+  document.addEventListener('keydown', function(e){
+    var idx = 0;
+    sections.forEach(function(s, i){
+      var rect = s.getBoundingClientRect();
+      if(rect.top <= window.innerHeight * 0.5) idx = i;
+    });
+    if(e.key === 'ArrowDown' && idx < total - 1) sections[idx+1].scrollIntoView({ behavior: 'smooth' });
+    if(e.key === 'ArrowUp' && idx > 0) sections[idx-1].scrollIntoView({ behavior: 'smooth' });
+  });
+
+})();
+</script>
+</body>
+</html>

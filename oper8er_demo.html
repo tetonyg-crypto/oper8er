@@ -1,0 +1,1594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oper8er — System Demo</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Sora:wght@300;400;600;700;800;900&display=swap');
+
+:root {
+  --navy:   #060c14;
+  --n1:     #080f18;
+  --n2:     #0a1422;
+  --n3:     #0d1b2a;
+  --n4:     #111f30;
+  --teal:   #00d4c8;
+  --teal2:  #00b8ae;
+  --lime:   #c8e032;
+  --purple: #a78bfa;
+  --green:  #22c55e;
+  --red:    #f87171;
+  --amber:  #fbbf24;
+  --blue:   #60a5fa;
+  --w90: rgba(255,255,255,0.90);
+  --w70: rgba(255,255,255,0.70);
+  --w50: rgba(255,255,255,0.50);
+  --w30: rgba(255,255,255,0.30);
+  --w15: rgba(255,255,255,0.15);
+  --w08: rgba(255,255,255,0.08);
+  --w04: rgba(255,255,255,0.04);
+  --w02: rgba(255,255,255,0.02);
+  --bd:  rgba(255,255,255,0.07);
+  --bt:  rgba(0,212,200,0.18);
+  --bl:  rgba(200,224,50,0.18);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;background:var(--navy);}
+body{font-family:'Sora',sans-serif;color:#fff;}
+
+/* ── CHROME ── */
+#chrome{
+  position:fixed;inset:0;z-index:100;pointer-events:none;
+  background:
+    radial-gradient(ellipse at 0% 0%, rgba(0,212,200,0.04) 0%, transparent 45%),
+    radial-gradient(ellipse at 100% 100%, rgba(200,224,50,0.03) 0%, transparent 45%);
+}
+#chrome::before{
+  content:'';position:absolute;inset:0;
+  background-image:
+    linear-gradient(rgba(0,212,200,0.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,212,200,0.025) 1px,transparent 1px);
+  background-size:56px 56px;
+}
+
+/* ── HEADER ── */
+#header{
+  position:fixed;top:0;left:0;right:0;z-index:200;
+  height:56px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 32px;
+  background:rgba(6,12,20,0.92);
+  border-bottom:1px solid var(--bd);
+  backdrop-filter:blur(20px);
+}
+.hd-logo{font-size:13px;font-weight:900;letter-spacing:-0.3px;}
+.hd-logo-main{color:#fff;}
+.hd-logo-sep{color:var(--teal);margin:0 6px;}
+.hd-logo-sub{color:var(--teal);}
+.hd-center{display:flex;align-items:center;gap:6px;}
+.hd-step{
+  display:flex;align-items:center;gap:5px;
+  padding:4px 10px;border-radius:20px;
+  font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;
+  color:var(--w30);cursor:pointer;transition:all 0.2s;
+}
+.hd-step.active{background:rgba(0,212,200,0.1);border:1px solid rgba(0,212,200,0.2);color:var(--teal);}
+.hd-step.done{color:var(--w50);}
+.hd-step-num{font-family:'JetBrains Mono',monospace;font-size:8px;}
+.hd-right{display:flex;align-items:center;gap:12px;}
+.hd-engine-pill{
+  font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;
+  color:var(--lime);background:rgba(200,224,50,0.07);
+  border:1px solid rgba(200,224,50,0.15);
+  padding:5px 12px;border-radius:20px;
+  display:flex;align-items:center;gap:5px;
+}
+.hd-engine-dot{width:5px;height:5px;border-radius:50%;background:var(--lime);box-shadow:0 0 6px rgba(200,224,50,0.8);}
+
+/* ── PROGRESS BAR ── */
+#progress{
+  position:fixed;top:56px;left:0;z-index:201;
+  height:2px;background:linear-gradient(90deg,var(--teal),var(--lime));
+  width:0%;transition:width 0.4s cubic-bezier(0.22,1,0.36,1);
+  box-shadow:0 0 8px rgba(0,212,200,0.5);
+}
+
+/* ── SCREEN SYSTEM ── */
+#stage{
+  position:fixed;top:56px;left:0;right:0;bottom:0;
+  overflow:hidden;
+}
+.screen{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:24px 32px 80px;
+  opacity:0;transform:translateY(20px);
+  transition:opacity 0.5s ease,transform 0.5s ease;
+  pointer-events:none;
+}
+.screen.active{opacity:1;transform:translateY(0);pointer-events:all;}
+.screen.exiting{opacity:0;transform:translateY(-20px);}
+
+/* ── NAV ── */
+#nav-bar{
+  position:fixed;bottom:0;left:0;right:0;z-index:200;
+  height:72px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 32px;
+  background:rgba(6,12,20,0.95);
+  border-top:1px solid var(--bd);
+  backdrop-filter:blur(20px);
+}
+.nav-btn{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 22px;border-radius:10px;border:none;
+  font-family:'Sora',sans-serif;font-size:12px;font-weight:800;
+  cursor:pointer;transition:all 0.2s;letter-spacing:0.3px;
+}
+.nav-btn-back{background:var(--w04);border:1px solid var(--bd);color:var(--w50);}
+.nav-btn-back:hover{background:var(--w08);color:var(--w70);}
+.nav-btn-next{background:var(--lime);color:#080f00;}
+.nav-btn-next:hover{background:#d4ec3c;transform:translateY(-1px);}
+.nav-btn-next:disabled{background:rgba(200,224,50,0.3);color:rgba(8,15,0,0.5);cursor:not-allowed;transform:none;}
+.nav-center{text-align:center;}
+.nav-counter{font-size:10px;font-weight:800;color:var(--w30);letter-spacing:1px;}
+.nav-hint{font-size:9px;color:var(--w20);margin-top:2px;}
+.nav-dots{display:flex;gap:5px;justify-content:center;margin-top:4px;}
+.nav-dot{width:4px;height:4px;border-radius:50%;background:var(--w15);transition:all 0.2s;}
+.nav-dot.active{background:var(--teal);width:16px;border-radius:2px;box-shadow:0 0 6px rgba(0,212,200,0.6);}
+.nav-dot.done{background:var(--w30);}
+
+/* ── REUSABLE COMPONENTS ── */
+.eyebrow{
+  display:inline-flex;align-items:center;gap:10px;
+  font-size:9px;font-weight:800;letter-spacing:3px;text-transform:uppercase;
+  color:var(--teal);margin-bottom:14px;
+}
+.eyebrow::before{content:'';width:20px;height:1px;background:var(--teal);opacity:0.5;}
+
+.card{
+  background:var(--n3);border:1px solid var(--bd);
+  border-radius:14px;overflow:hidden;
+}
+.card-hd{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:9px 14px;border-bottom:1px solid var(--bd);
+  background:var(--w02);
+}
+.card-title{font-size:8.5px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--w30);}
+.card-bd{padding:14px;}
+
+.badge{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:8px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;
+  padding:2px 7px;border-radius:10px;
+}
+.b-t{background:rgba(0,212,200,0.1);color:var(--teal);border:1px solid rgba(0,212,200,0.2);}
+.b-l{background:rgba(200,224,50,0.1);color:var(--lime);border:1px solid rgba(200,224,50,0.2);}
+.b-g{background:rgba(34,197,94,0.1);color:var(--green);border:1px solid rgba(34,197,94,0.2);}
+.b-r{background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.2);}
+.b-a{background:rgba(251,191,36,0.1);color:var(--amber);border:1px solid rgba(251,191,36,0.2);}
+.b-p{background:rgba(167,139,250,0.1);color:var(--purple);border:1px solid rgba(167,139,250,0.2);}
+
+.gdot{width:7px;height:7px;border-radius:50%;flex-shrink:0;animation:gdp 2s ease-in-out infinite;}
+.gd-t{background:var(--teal);box-shadow:0 0 8px rgba(0,212,200,0.8);}
+.gd-l{background:var(--lime);box-shadow:0 0 8px rgba(200,224,50,0.8);}
+.gd-g{background:var(--green);box-shadow:0 0 8px rgba(34,197,94,0.8);}
+@keyframes gdp{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(0.8)}}
+
+/* MONO */
+.mono{font-family:'JetBrains Mono',monospace;}
+
+/* ── SCREEN 1 — MESSAGE ARRIVES ── */
+.conv-wrap{width:100%;max-width:680px;display:flex;flex-direction:column;gap:10px;}
+.conv-header{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 16px;background:var(--n3);border:1px solid var(--bd);border-radius:12px;
+}
+.conv-av{
+  width:36px;height:36px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,#1e3a5f,#2563eb);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:900;color:#60a5fa;
+}
+.conv-name{font-size:13px;font-weight:800;color:#fff;}
+.conv-meta{font-size:10px;color:var(--w30);}
+.conv-status{margin-left:auto;display:flex;align-items:center;gap:5px;font-size:9px;color:var(--w30);}
+
+.conv-thread{
+  background:var(--n3);border:1px solid var(--bd);border-radius:12px;
+  padding:16px;min-height:140px;display:flex;flex-direction:column;gap:10px;
+}
+.msg{display:flex;align-items:flex-end;gap:8px;max-width:80%;}
+.msg-in{align-self:flex-start;}
+.msg-out{align-self:flex-end;flex-direction:row-reverse;}
+.msg-av{
+  width:26px;height:26px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;
+}
+.msg-bubble{
+  padding:10px 13px;border-radius:12px;
+  font-size:13px;line-height:1.5;font-weight:500;
+}
+.msg-in .msg-bubble{
+  background:var(--n4);border:1px solid var(--bd);
+  color:var(--w90);border-bottom-left-radius:4px;
+}
+.msg-out .msg-bubble{
+  background:rgba(0,212,200,0.1);border:1px solid rgba(0,212,200,0.2);
+  color:var(--w90);border-bottom-right-radius:4px;
+}
+.msg-time{font-size:8.5px;color:var(--w20);white-space:nowrap;}
+
+.typing-indicator{
+  display:flex;align-items:center;gap:10px;
+  opacity:0;transition:opacity 0.3s;
+}
+.typing-indicator.vis{opacity:1;}
+.typing-dots{display:flex;gap:3px;padding:10px 14px;background:var(--n4);border:1px solid var(--bd);border-radius:12px;border-bottom-left-radius:4px;}
+.typing-dots span{width:5px;height:5px;border-radius:50%;background:var(--w30);animation:td 1.2s ease-in-out infinite;}
+.typing-dots span:nth-child(2){animation-delay:0.2s;}
+.typing-dots span:nth-child(3){animation-delay:0.4s;}
+@keyframes td{0%,60%,100%{transform:translateY(0);opacity:0.4}30%{transform:translateY(-4px);opacity:1}}
+
+/* prev messages faded */
+.msg-prev{opacity:0.35;}
+
+/* system badge overlay */
+.sys-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:8px;font-weight:700;color:var(--teal);
+  background:rgba(0,212,200,0.06);border:1px solid rgba(0,212,200,0.12);
+  padding:2px 7px;border-radius:4px;margin-top:4px;
+}
+
+/* ── SCREEN 2 — DETECTION ── */
+.detect-scene{width:100%;max-width:780px;display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}
+.detect-msg-wrap{position:relative;}
+.detect-msg-card{
+  background:var(--n3);border:1px solid var(--bd);border-radius:12px;
+  padding:16px;
+}
+.detect-msg-label{font-size:8.5px;font-weight:800;color:var(--w30);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;}
+.detect-bubble{
+  background:var(--n4);border:1px solid var(--bd);border-radius:10px;
+  padding:12px 14px;font-size:13px;color:var(--w90);line-height:1.5;
+  position:relative;
+}
+.word-tag{
+  display:inline;position:relative;cursor:default;
+}
+.word-tag.tagged{
+  background:rgba(0,212,200,0.12);border-radius:3px;
+  box-shadow:0 0 0 1px rgba(0,212,200,0.3);
+  color:var(--teal);
+}
+.word-tooltip{
+  position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);
+  background:rgba(0,212,200,0.15);border:1px solid rgba(0,212,200,0.3);
+  color:var(--teal);font-size:8px;font-weight:700;
+  padding:3px 7px;border-radius:4px;white-space:nowrap;
+  pointer-events:none;z-index:10;
+  opacity:0;transition:opacity 0.2s;
+}
+.word-tag.tagged .word-tooltip{opacity:1;}
+
+.signal-list{display:flex;flex-direction:column;gap:6px;}
+.signal-item{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:10px 12px;
+  background:var(--w02);border:1px solid var(--bd);border-radius:9px;
+  opacity:0;transform:translateX(12px);
+  transition:opacity 0.35s ease,transform 0.35s ease,border-color 0.3s,background 0.3s;
+}
+.signal-item.vis{opacity:1;transform:translateX(0);}
+.signal-item.hot{background:rgba(0,212,200,0.05);border-color:rgba(0,212,200,0.2);}
+.si-icon{font-size:14px;flex-shrink:0;margin-top:1px;}
+.si-content{flex:1;}
+.si-label{font-size:10.5px;font-weight:700;color:#fff;margin-bottom:2px;}
+.si-detail{font-size:9px;color:var(--w40);line-height:1.4;}
+.si-conf{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;margin-left:auto;padding-top:2px;}
+.conf-high{color:var(--green);}
+.conf-med{color:var(--amber);}
+.conf-na{color:var(--w30);}
+
+.stage-banner{
+  margin-top:10px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 14px;
+  background:rgba(0,212,200,0.06);border:1px solid rgba(0,212,200,0.2);
+  border-radius:9px;
+  opacity:0;transition:opacity 0.4s;
+}
+.stage-banner.vis{opacity:1;}
+.sb-label{font-size:10px;font-weight:800;color:var(--teal);}
+.sb-val{font-size:10px;color:var(--w60);}
+
+/* ── SCREEN 3 — ENGINE ACTIVATION ── */
+.engine-scene{width:100%;max-width:700px;display:flex;flex-direction:column;gap:20px;align-items:center;}
+.engine-diagram{position:relative;width:580px;height:280px;}
+.ed-center{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:100px;height:100px;border-radius:50%;
+  background:rgba(0,212,200,0.08);border:2px solid rgba(0,212,200,0.4);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  z-index:5;
+  box-shadow:0 0 0 10px rgba(0,212,200,0.04),0 0 0 20px rgba(0,212,200,0.02);
+  animation:cen-pulse 3s ease-in-out infinite;
+}
+.ed-center.firing{
+  border-color:rgba(0,212,200,0.9);
+  box-shadow:0 0 0 12px rgba(0,212,200,0.08),0 0 0 24px rgba(0,212,200,0.04),0 0 40px rgba(0,212,200,0.3);
+}
+@keyframes cen-pulse{0%,100%{box-shadow:0 0 0 10px rgba(0,212,200,0.04),0 0 0 20px rgba(0,212,200,0.02)}50%{box-shadow:0 0 0 14px rgba(0,212,200,0.06),0 0 0 28px rgba(0,212,200,0.03)}}
+.ed-ct{font-size:8.5px;font-weight:800;color:var(--teal);text-transform:uppercase;letter-spacing:0.5px;text-align:center;line-height:1.2;}
+.ed-cs{font-size:7.5px;color:var(--w30);text-align:center;}
+
+.engine-svg{position:absolute;inset:0;pointer-events:none;}
+
+.eng-node{
+  position:absolute;
+  background:var(--n3);border:1px solid var(--bd);border-radius:10px;
+  padding:8px 12px;text-align:left;min-width:110px;
+  transition:all 0.4s ease;
+  z-index:4;
+}
+.eng-node.dimmed{opacity:0.35;}
+.eng-node.active-eng{
+  background:rgba(200,224,50,0.07);border-color:rgba(200,224,50,0.4);
+  box-shadow:0 0 20px rgba(200,224,50,0.12);opacity:1;
+}
+.eng-node-code{font-family:'JetBrains Mono',monospace;font-size:7.5px;font-weight:700;color:var(--w20);margin-bottom:3px;}
+.eng-node-name{font-size:10px;font-weight:800;color:#fff;line-height:1.2;}
+.eng-node-status{font-size:8px;color:var(--w30);margin-top:2px;}
+.eng-node.active-eng .eng-node-name{color:var(--lime);}
+.eng-node.active-eng .eng-node-status{color:rgba(200,224,50,0.7);}
+
+.activation-text{
+  text-align:center;
+  font-size:14px;font-weight:700;color:var(--w70);
+  padding:14px 24px;background:rgba(200,224,50,0.04);border:1px solid rgba(200,224,50,0.12);
+  border-radius:10px;
+  opacity:0;transform:translateY(8px);transition:opacity 0.4s ease,transform 0.4s ease;
+}
+.activation-text.vis{opacity:1;transform:translateY(0);}
+.activation-text strong{color:var(--lime);}
+
+/* ── SCREEN 4 — RESPONSE GENERATES ── */
+.resp-scene{width:100%;max-width:680px;display:flex;flex-direction:column;gap:12px;}
+.resp-thread{
+  background:var(--n3);border:1px solid var(--bd);border-radius:12px;
+  padding:16px;display:flex;flex-direction:column;gap:10px;
+}
+
+.structure-tags{
+  display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;
+}
+.stag{
+  font-size:8px;font-weight:700;letter-spacing:0.3px;
+  color:var(--teal);background:rgba(0,212,200,0.07);border:1px solid rgba(0,212,200,0.15);
+  padding:2px 7px;border-radius:4px;
+  opacity:0;transform:translateY(4px);transition:opacity 0.25s ease,transform 0.25s ease;
+}
+.stag.vis{opacity:1;transform:translateY(0);}
+
+.rep-badge{
+  display:flex;align-items:center;gap:8px;padding:8px 12px;
+  background:rgba(34,197,94,0.05);border:1px solid rgba(34,197,94,0.12);
+  border-radius:8px;
+  opacity:0;transition:opacity 0.4s;
+}
+.rep-badge.vis{opacity:1;}
+.rep-badge-text{font-size:11px;color:var(--w60);}
+.rep-badge-text strong{color:var(--green);}
+
+/* ── SCREEN 5 — CASCADE FIRES ── */
+.cascade-scene{width:100%;max-width:820px;}
+.cascade-title{text-align:center;margin-bottom:20px;}
+.cascade-title h3{font-size:18px;font-weight:900;color:#fff;letter-spacing:-0.5px;}
+.cascade-title p{font-size:11px;color:var(--w40);margin-top:4px;}
+.cascade-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;}
+.cascade-card{
+  background:var(--n3);border:1px solid var(--bd);
+  border-top:2px solid;border-radius:12px;overflow:hidden;
+  opacity:0;transform:translateY(12px);
+  transition:opacity 0.4s ease,transform 0.4s ease;
+}
+.cascade-card.vis{opacity:1;transform:translateY(0);}
+.cc-t{border-top-color:var(--teal);}
+.cc-p{border-top-color:var(--purple);}
+.cc-l{border-top-color:var(--lime);}
+.cc-g{border-top-color:var(--green);}
+
+.cc-header{
+  padding:10px 12px;border-bottom:1px solid var(--bd);
+  display:flex;align-items:center;gap:7px;
+  background:var(--w02);
+}
+.cc-icon{font-size:13px;}
+.cc-name{font-size:9.5px;font-weight:800;color:#fff;}
+.cc-body{padding:10px 12px;font-size:10px;color:var(--w50);line-height:1.5;}
+.cc-field{display:flex;gap:6px;margin-bottom:4px;}
+.cc-field-k{font-weight:700;color:var(--w30);flex-shrink:0;font-size:9.5px;}
+.cc-field-v{color:var(--w70);font-size:9.5px;}
+.cc-score-big{font-size:28px;font-weight:900;letter-spacing:-1.5px;}
+.cc-score-label{font-size:8.5px;color:var(--w40);text-transform:uppercase;letter-spacing:1px;margin-top:2px;}
+.cc-score-change{font-size:10px;font-weight:700;color:var(--green);margin-top:4px;}
+.cc-queue-item{
+  display:flex;align-items:center;gap:6px;
+  padding:5px 0;border-bottom:1px solid var(--bd);font-size:9px;
+}
+.cc-queue-item:last-child{border-bottom:none;}
+.cc-event-tag{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--teal);word-break:break-all;}
+
+/* score bar animation */
+.score-bar-wrap{height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;margin:8px 0;}
+.score-bar-fill{height:100%;background:linear-gradient(90deg,var(--teal),var(--lime));border-radius:2px;width:0%;transition:width 1.2s cubic-bezier(0.22,1,0.36,1);}
+
+/* ── SCREEN 6 — CUSTOMER RESPONDS ── */
+.confirm-scene{width:100%;max-width:680px;display:flex;flex-direction:column;gap:12px;}
+.confirm-banner{
+  padding:18px 24px;
+  background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.2);
+  border-radius:12px;
+  display:flex;align-items:center;gap:16px;
+  opacity:0;transform:scale(0.97);
+  transition:opacity 0.4s ease,transform 0.4s ease;
+}
+.confirm-banner.vis{opacity:1;transform:scale(1);}
+.cb-icon{
+  width:44px;height:44px;border-radius:50%;flex-shrink:0;
+  background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);
+  display:flex;align-items:center;justify-content:center;font-size:18px;
+}
+.cb-title{font-size:16px;font-weight:900;color:var(--green);letter-spacing:-0.3px;}
+.cb-detail{font-size:11px;color:var(--w50);margin-top:2px;}
+.stage-update{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 16px;background:var(--n3);border:1px solid var(--bd);border-radius:10px;
+  opacity:0;transition:opacity 0.4s;
+}
+.stage-update.vis{opacity:1;}
+.su-label{font-size:10px;color:var(--w40);text-transform:uppercase;letter-spacing:1px;font-weight:800;}
+.su-from{font-size:12px;font-weight:700;color:var(--w50);text-decoration:line-through;}
+.su-arrow{color:var(--w30);}
+.su-to{font-size:12px;font-weight:800;color:var(--green);}
+
+/* ── SCREEN 7 — INTELLIGENCE UPDATES ── */
+.intel-scene{width:100%;max-width:900px;display:grid;grid-template-columns:1.2fr 0.9fr 0.9fr;gap:12px;}
+
+.score-card-big{
+  background:var(--n3);border:1px solid var(--bd);border-radius:12px;overflow:hidden;
+}
+.scb-header{padding:12px 16px;border-bottom:1px solid var(--bd);background:var(--w02);}
+.scb-title{font-size:8.5px;font-weight:800;color:var(--w30);text-transform:uppercase;letter-spacing:1.5px;}
+.scb-body{padding:16px;}
+.scb-deal{font-size:12px;font-weight:700;color:#fff;margin-bottom:4px;}
+.scb-vehicle{font-size:10px;color:var(--w40);margin-bottom:14px;}
+
+.score-display{
+  display:flex;align-items:flex-end;gap:8px;margin-bottom:8px;
+}
+.sd-num{font-size:48px;font-weight:900;letter-spacing:-3px;line-height:1;color:var(--green);}
+.sd-max{font-size:14px;color:var(--w20);margin-bottom:8px;}
+.sd-badge-wrap{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
+
+.score-change-anim{
+  display:flex;align-items:center;gap:6px;
+  font-size:10px;color:var(--w40);margin-bottom:10px;
+}
+.sca-was{font-size:13px;font-weight:700;color:var(--amber);text-decoration:line-through;}
+.sca-arr{color:var(--w20);}
+.sca-now{font-size:13px;font-weight:800;color:var(--green);}
+
+.signal-mini{display:flex;flex-direction:column;gap:4px;}
+.sm-row{display:flex;align-items:center;gap:6px;font-size:9.5px;}
+.sm-label{flex:1;color:var(--w50);}
+.sm-bar-wrap{width:60px;height:3px;background:var(--w08);border-radius:2px;overflow:hidden;}
+.sm-bar{height:100%;background:var(--teal);border-radius:2px;}
+.sm-val{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--w40);min-width:20px;text-align:right;}
+
+.pipeline-summary{
+  background:var(--n3);border:1px solid var(--bd);border-radius:12px;overflow:hidden;
+}
+.rep-rank-card{
+  background:var(--n3);border:1px solid var(--bd);border-radius:12px;overflow:hidden;
+}
+.pipeline-bars{display:flex;flex-direction:column;gap:8px;padding:12px;}
+.pb-row{
+  display:flex;align-items:center;gap:8px;
+  padding:7px 10px;border-radius:7px;border:1px solid;
+}
+.pb-h{background:rgba(34,197,94,0.04);border-color:rgba(34,197,94,0.12);}
+.pb-r{background:rgba(251,191,36,0.04);border-color:rgba(251,191,36,0.12);}
+.pb-c{background:rgba(239,68,68,0.04);border-color:rgba(239,68,68,0.12);}
+.pb-num{font-size:20px;font-weight:900;letter-spacing:-1px;min-width:24px;}
+.pb-h .pb-num{color:var(--green);}
+.pb-r .pb-num{color:var(--amber);}
+.pb-c .pb-num{color:var(--red);}
+.pb-lbl{font-size:9px;color:var(--w40);}
+
+.rep-list{display:flex;flex-direction:column;gap:4px;padding:10px;}
+.rl-row{
+  display:flex;align-items:center;gap:7px;
+  padding:6px 8px;border-radius:6px;background:var(--w02);border:1px solid var(--bd);
+}
+.rl-rank{font-size:9px;font-weight:900;color:var(--w20);min-width:14px;}
+.rl-av{width:22px;height:22px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:8.5px;font-weight:900;}
+.rl-name{flex:1;font-size:10px;font-weight:700;color:#fff;}
+.rl-bar-wrap{width:48px;height:3px;background:var(--w08);border-radius:2px;overflow:hidden;}
+.rl-bar{height:100%;border-radius:2px;}
+.rl-score{font-size:11px;font-weight:900;margin-left:4px;}
+
+/* ── SCREEN 8 — SUMMARY ── */
+.summary-scene{width:100%;max-width:820px;}
+.summary-header{text-align:center;margin-bottom:28px;}
+.summary-header h2{font-size:clamp(26px,4vw,40px);font-weight:900;letter-spacing:-1.5px;color:#fff;}
+.summary-header h2 em{font-style:normal;color:var(--teal);}
+.summary-header p{font-size:13px;color:var(--w40);margin-top:8px;}
+.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;}
+.sum-card{
+  background:var(--n3);border:1px solid var(--bd);border-radius:11px;
+  padding:12px 14px;text-align:center;
+}
+.sum-icon{font-size:20px;margin-bottom:6px;}
+.sum-title{font-size:10px;font-weight:800;color:#fff;margin-bottom:3px;}
+.sum-desc{font-size:8.5px;color:var(--w40);line-height:1.4;}
+.summary-bottom{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:16px 20px;
+  background:rgba(0,212,200,0.04);border:1px solid rgba(0,212,200,0.12);
+  border-radius:12px;
+}
+.sb-stat{text-align:center;}
+.sb-stat-num{font-size:24px;font-weight:900;letter-spacing:-1px;color:var(--teal);}
+.sb-stat-lbl{font-size:8.5px;color:var(--w30);text-transform:uppercase;letter-spacing:1px;margin-top:2px;}
+.sb-divider{width:1px;height:36px;background:var(--bd);}
+.sb-tagline{font-size:13px;font-weight:700;color:var(--w60);text-align:center;flex:1;line-height:1.5;}
+.sb-tagline strong{color:var(--white);}
+
+.engine-switcher{
+  margin-top:24px;padding:14px 18px;
+  background:var(--n3);border:1px solid var(--bd);border-radius:12px;
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+}
+.es-label{font-size:9px;font-weight:800;color:var(--w30);text-transform:uppercase;letter-spacing:1.5px;white-space:nowrap;}
+.es-btn{
+  padding:6px 14px;border-radius:7px;border:1px solid var(--bd);
+  background:var(--w02);color:var(--w50);
+  font-family:'Sora',sans-serif;font-size:10px;font-weight:700;
+  cursor:pointer;transition:all 0.15s;
+}
+.es-btn:hover{background:var(--w08);color:var(--w80);border-color:var(--w15);}
+.es-btn.current{background:rgba(200,224,50,0.08);border-color:rgba(200,224,50,0.2);color:var(--lime);}
+
+/* CTA */
+.cta-wrap{margin-top:16px;display:flex;justify-content:center;gap:10px;}
+.cta-btn{
+  padding:12px 28px;border-radius:10px;border:none;
+  font-family:'Sora',sans-serif;font-size:12px;font-weight:800;
+  cursor:pointer;transition:all 0.2s;
+}
+.cta-primary{background:var(--lime);color:#060f00;}
+.cta-primary:hover{background:#d4ec3c;transform:translateY(-1px);}
+.cta-secondary{background:var(--w04);border:1px solid var(--bd);color:var(--w50);}
+.cta-secondary:hover{background:var(--w08);color:var(--w70);}
+
+/* ── UTILS ── */
+.fade-in{opacity:0;transform:translateY(10px);transition:opacity 0.4s ease,transform 0.4s ease;}
+.fade-in.vis{opacity:1;transform:translateY(0);}
+
+/* cursor blink */
+.cursor::after{content:'|';animation:cur 1s step-end infinite;color:var(--teal);}
+@keyframes cur{0%,100%{opacity:1}50%{opacity:0}}
+
+/* scan line effect on active screen */
+.screen.active::after{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,212,200,0.008) 2px,rgba(0,212,200,0.008) 4px);
+}
+</style>
+</head>
+<body>
+
+<div id="chrome"></div>
+
+<!-- HEADER -->
+<header id="header">
+  <div class="hd-logo">
+    <span class="hd-logo-main">OPER</span><span style="color:var(--teal)">8</span><span class="hd-logo-main">ER</span>
+    <span class="hd-logo-sep">·</span>
+    <span class="hd-logo-sub">System Demo</span>
+  </div>
+  <div class="hd-center" id="hd-steps"></div>
+  <div class="hd-right">
+    <div class="hd-engine-pill">
+      <div class="hd-engine-dot"></div>
+      <span id="active-engine-label">Appointment Engine</span>
+    </div>
+  </div>
+</header>
+
+<div id="progress"></div>
+
+<!-- STAGE -->
+<div id="stage">
+
+  <!-- ────────────────────────────────
+       SCREEN 1 — MESSAGE ARRIVES
+  ──────────────────────────────── -->
+  <div class="screen" id="s1">
+    <div class="eyebrow">Screen 01 · Inbound</div>
+    <h2 style="font-size:clamp(24px,3.5vw,38px);font-weight:900;letter-spacing:-1px;color:#fff;text-align:center;margin-bottom:6px;">The message arrives.</h2>
+    <p style="font-size:12px;color:var(--w40);text-align:center;margin-bottom:24px;">Marcus Torres · 2024 Ford Bronco Sport · Third message in thread</p>
+    <div class="conv-wrap">
+      <div class="conv-header">
+        <div class="conv-av">M</div>
+        <div>
+          <div class="conv-name">Marcus Torres</div>
+          <div class="conv-meta">2024 Ford Bronco Sport · $34,990 · 3 messages</div>
+        </div>
+        <div class="conv-status"><div class="gdot gd-t"></div>Active</div>
+      </div>
+      <div class="conv-thread" id="s1-thread">
+        <div class="msg msg-in msg-prev">
+          <div class="msg-av" style="background:linear-gradient(135deg,#1e3a5f,#2563eb);color:#60a5fa;">M</div>
+          <div>
+            <div class="msg-bubble">"Hey, I saw the Bronco Sport on your site. Still available?"</div>
+            <div class="msg-time">Yesterday, 10:22 AM</div>
+          </div>
+        </div>
+        <div class="msg msg-out msg-prev">
+          <div class="msg-av" style="background:linear-gradient(135deg,#0d3026,#065f46);color:#34d399;">R</div>
+          <div>
+            <div class="msg-bubble">"Hey Marcus! Yes, still here and looking great. What questions do you have?"</div>
+            <div class="msg-time">Yesterday, 10:24 AM</div>
+          </div>
+        </div>
+        <div class="typing-indicator" id="typing-ind">
+          <div class="msg-av" style="background:linear-gradient(135deg,#1e3a5f,#2563eb);color:#60a5fa;">M</div>
+          <div class="typing-dots"><span></span><span></span><span></span></div>
+        </div>
+        <!-- New message injected by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ────────────────────────────────
+       SCREEN 2 — SYSTEM ANALYZES
+  ──────────────────────────────── -->
+  <div class="screen" id="s2">
+    <div class="eyebrow">Screen 02 · Detection</div>
+    <h2 style="font-size:clamp(20px,3vw,34px);font-weight:900;letter-spacing:-1px;color:#fff;text-align:center;margin-bottom:6px;">The system analyzes.</h2>
+    <p style="font-size:12px;color:var(--w40);text-align:center;margin-bottom:20px;">5 signals processed in parallel. Classification confirmed in &lt; 0.2 seconds.</p>
+    <div class="detect-scene">
+      <div class="detect-msg-wrap">
+        <div class="detect-msg-card">
+          <div class="detect-msg-label">Inbound Message</div>
+          <div class="detect-bubble" id="detect-bubble">
+            Yeah I'm definitely interested. I
+            <span class="word-tag" id="wt1">might try to swing by<span class="word-tooltip">Conditional scheduling</span></span>
+            <span class="word-tag" id="wt2">sometime this weekend<span class="word-tooltip">Non-specific timeframe</span></span>
+            <span class="word-tag" id="wt3">if I'm free<span class="word-tooltip">Uncommitted qualifier</span></span>
+          </div>
+          <div class="stage-banner" id="stage-banner">
+            <div>
+              <div class="sb-label">Conversation Stage</div>
+              <div class="sb-val">scheduling_ready · 3 prior messages</div>
+            </div>
+            <span class="badge b-t">Stage Classified</span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:8.5px;font-weight:800;color:var(--w30);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;">Detection Signals</div>
+        <div class="signal-list" id="signal-list">
+          <div class="signal-item" data-delay="0">
+            <div class="si-icon">📅</div>
+            <div class="si-content">
+              <div class="si-label">vague_scheduling_interest</div>
+              <div class="si-detail">"might try to swing by" · "sometime this weekend" · "if I'm free" — conditional language detected across three indicators</div>
+            </div>
+            <div class="si-conf conf-high">0.91</div>
+          </div>
+          <div class="signal-item" data-delay="1">
+            <div class="si-icon">💬</div>
+            <div class="si-content">
+              <div class="si-label">scheduling_readiness</div>
+              <div class="si-detail">Lead at message 3 in thread. Interest confirmed across prior messages. Appointment stage appropriate.</div>
+            </div>
+            <div class="si-conf conf-high">0.88</div>
+          </div>
+          <div class="signal-item" data-delay="2">
+            <div class="si-icon">⚡</div>
+            <div class="si-content">
+              <div class="si-label">commitment_gap</div>
+              <div class="si-detail">Interest is genuine but unanchored. No time, date, or specific intent confirmed. Appointment Engine trigger criteria met.</div>
+            </div>
+            <div class="si-conf conf-high">0.94</div>
+          </div>
+          <div class="signal-item" data-delay="3">
+            <div class="si-icon">🏁</div>
+            <div class="si-content">
+              <div class="si-label">price_objection</div>
+              <div class="si-detail">No pricing friction detected in current or prior messages. Objection Engine not triggered.</div>
+            </div>
+            <div class="si-conf conf-na">absent</div>
+          </div>
+          <div class="signal-item hot" data-delay="4">
+            <div class="si-icon">🎯</div>
+            <div class="si-content">
+              <div class="si-label">engine_routing → Appointment Engine</div>
+              <div class="si-detail">All routing criteria met. Engine selected. Response protocol loaded.</div>
+            </div>
+            <div class="si-conf conf-high">routed</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ────────────────────────────────
+       SCREEN 3 — ENGINE ACTIVATES
+  ──────────────────────────────── -->
+  <div class="screen" id="s3">
+    <div class="eyebrow">Screen 03 · Activation</div>
+    <h2 style="font-size:clamp(20px,3vw,34px);font-weight:900;letter-spacing:-1px;color:#fff;text-align:center;margin-bottom:20px;">The engine activates.</h2>
+    <div class="engine-scene">
+      <div class="engine-diagram" id="eng-diag">
+        <svg class="engine-svg" id="eng-svg-el" viewBox="0 0 580 280"></svg>
+        <div class="ed-center" id="ed-center">
+          <div class="ed-ct">Execution<br>Analysis</div>
+          <div class="ed-cs">Processing</div>
+        </div>
+        <!-- Engine nodes, positioned by JS -->
+        <div class="eng-node dimmed" id="en-appt" style="top:10%;left:62%;">
+          <div class="eng-node-code">E01</div>
+          <div class="eng-node-name">Appointment Engine</div>
+          <div class="eng-node-status">Scheduling signals</div>
+        </div>
+        <div class="eng-node dimmed" id="en-obj" style="top:42%;left:80%;">
+          <div class="eng-node-code">E02</div>
+          <div class="eng-node-name">Objection Engine</div>
+          <div class="eng-node-status">Friction signals</div>
+        </div>
+        <div class="eng-node dimmed" id="en-fu" style="top:72%;left:64%;">
+          <div class="eng-node-code">E03</div>
+          <div class="eng-node-name">Follow-Up Engine</div>
+          <div class="eng-node-status">Silence signals</div>
+        </div>
+        <div class="eng-node dimmed" id="en-qual" style="top:72%;left:10%;">
+          <div class="eng-node-code">E04</div>
+          <div class="eng-node-name">Qualification Engine</div>
+          <div class="eng-node-status">Gap detection</div>
+        </div>
+        <div class="eng-node dimmed" id="en-rec" style="top:10%;left:4%;">
+          <div class="eng-node-code">E05</div>
+          <div class="eng-node-name">Lead Recovery Engine</div>
+          <div class="eng-node-status">Dormancy signals</div>
+        </div>
+      </div>
+      <div class="activation-text" id="act-text">
+        <strong>Appointment Engine activated</strong> — vague scheduling signal detected · confidence 0.91
+      </div>
+    </div>
+  </div>
+
+  <!-- ────────────────────────────────
+       SCREEN 4 — RESPONSE GENERATES
+  ──────────────────────────────── -->
+  <div class="screen" id="s4">
+    <div class="eyebrow">Screen 04 · Response</div>
+    <h2 style="font-size:clamp(20px,3vw,34px);font-weight:900;letter-spacing:-1px;color:#fff;text-align:center;margin-bottom:6px;">The response generates.</h2>
+    <p style="font-size:12px;color:var(--w40);text-align:center;margin-bottom:20px;">Binary choice presentation · Assumptive language · Value reinforcement</p>
+    <div class="resp-scene">
+      <div class="resp-thread" id="resp-thread">
+        <div class="msg msg-in">
+          <div class="msg-av" style="background:linear-gradient(135deg,#1e3a5f,#2563eb);color:#60a5fa;">M</div>
+          <div>
+            <div class="msg-bubble">"Yeah I'm definitely interested. I might try to swing by sometime this weekend if I'm free"</div>
+            <div class="msg-time">Today, 2:08 PM</div>
+          </div>
+        </div>
+        <!-- Response generated by JS -->
+        <div id="resp-guided-wrap" style="align-self:flex-end;max-width:80%;"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div style="font-size:8.5px;font-weight:800;color:var(--w30);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:2px;">Response Structure Applied</div>
+        <div class="structure-tags" id="struct-tags">
+          <span class="stag">Binary Choice Presentation</span>
+          <span class="stag">Assumptive Language</span>
+          <span class="stag">Value Reinforcement</span>
+          <span class="stag">Commitment Gap Ignored</span>
+          <span class="stag">No "Maybe" Acknowledged</span>
+        </div>
+        <div class="rep-badge" id="rep-badge">
+          <div class="gdot gd-g"></div>
+          <div class="rep-badge-text"><strong>Rep reviewed and sent</strong> — 43 second response time · no edits</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ────────────────────────────────
+       SCREEN 5 — CASCADE FIRES
+  ──────────────────────────────── -->
+  <div class="screen" id="s5">
+    <div class="eyebrow">Screen 05 · Cascade</div>
+    <div class="cascade-scene">
+      <div class="cascade-title fade-in">
+        <h3>The cascade fires.</h3>
+        <p>One send action. Four operational outputs. Zero additional effort from the rep.</p>
+      </div>
+      <div class="cascade-grid" id="cascade-grid">
+        <!-- CRM Note -->
+        <div class="cascade-card cc-t" id="cc1">
+          <div class="cc-header"><div class="cc-icon">📋</div><div class="cc-name">CRM Note Generated</div></div>
+          <div class="cc-body">
+            <div class="cc-field"><div class="cc-field-k">Stage</div><div class="cc-field-v">Scheduling</div></div>
+            <div class="cc-field"><div class="cc-field-k">Trigger</div><div class="cc-field-v">Vague scheduling intent detected — Appointment Engine</div></div>
+            <div class="cc-field"><div class="cc-field-k">Position</div><div class="cc-field-v">Binary options presented. Customer has not confirmed.</div></div>
+            <div class="cc-field"><div class="cc-field-k">Next Step</div><div class="cc-field-v">Await selection of Sat 11AM or Sun 2PM</div></div>
+            <div class="cc-field"><div class="cc-field-k">Timeline</div><div class="cc-field-v">This weekend · Confirmation pending</div></div>
+          </div>
+        </div>
+        <!-- Deal Score -->
+        <div class="cascade-card cc-p" id="cc2">
+          <div class="cc-header"><div class="cc-icon">📊</div><div class="cc-name">Deal Score Updated</div></div>
+          <div class="cc-body">
+            <div class="cc-score-big" style="color:var(--purple);">78</div>
+            <div class="cc-score-label">Deal Momentum Score</div>
+            <div class="score-bar-wrap"><div class="score-bar-fill" id="score-fill" style="background:linear-gradient(90deg,var(--purple),var(--teal));"></div></div>
+            <div style="font-size:8.5px;color:var(--w40);margin-top:4px;line-height:1.5;">
+              Scheduling Progression component queued to update on confirmation.<br>
+              Response Velocity: <strong style="color:var(--green);">92</strong>
+            </div>
+          </div>
+        </div>
+        <!-- Follow-up -->
+        <div class="cascade-card cc-l" id="cc3">
+          <div class="cc-header"><div class="cc-icon">📆</div><div class="cc-name">Follow-Up Scheduled</div></div>
+          <div class="cc-body">
+            <div class="cc-queue-item"><span class="badge b-l" style="font-size:7px;">Tier 1</span><span style="font-size:9px;margin-left:6px;color:var(--w60);">24hr — if no reply</span></div>
+            <div class="cc-queue-item"><span class="badge b-a" style="font-size:7px;">Tier 2</span><span style="font-size:9px;margin-left:6px;color:var(--w40);">48hr — value continue</span></div>
+            <div class="cc-queue-item"><span class="badge" style="font-size:7px;background:rgba(255,255,255,0.04);color:var(--w30);border:1px solid var(--bd);">Tier 3</span><span style="font-size:9px;margin-left:6px;color:var(--w30);">72hr — new info</span></div>
+            <div class="cc-queue-item"><span class="badge b-r" style="font-size:7px;">Tier 4</span><span style="font-size:9px;margin-left:6px;color:var(--w30);">96hr — scarcity</span></div>
+          </div>
+        </div>
+        <!-- Telemetry -->
+        <div class="cascade-card cc-g" id="cc4">
+          <div class="cc-header"><div class="cc-icon">📡</div><div class="cc-name">Telemetry Recorded</div></div>
+          <div class="cc-body">
+            <div class="cc-event-tag">appt_engine_activated</div>
+            <div style="height:4px;"></div>
+            <div class="cc-field"><div class="cc-field-k">Signal</div><div class="cc-field-v">vague_scheduling</div></div>
+            <div class="cc-field"><div class="cc-field-k">Conf</div><div class="cc-field-v">0.91</div></div>
+            <div class="cc-field"><div class="cc-field-k">RT</div><div class="cc-field-v">43 sec</div></div>
+            <div class="cc-field"><div class="cc-field-k">Stage</div><div class="cc-field-v">Scheduling · pending</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ────────────────────────────────
+       SCREEN 6 — CUSTOMER RESPONDS
+  ──────────────────────────────── -->
+  <div class="screen" id="s6">
+    <div class="eyebrow">Screen 06 · Confirmation</div>
+    <h2 style="font-size:clamp(20px,3vw,34px);font-weight:900;letter-spacing:-1px;color:#fff;text-align:center;margin-bottom:20px;">The customer responds.</h2>
+    <div class="confirm-scene">
+      <div class="card" style="padding:16px;">
+        <div class="msg msg-in" style="margin-bottom:10px;">
+          <div class="msg-av" style="background:linear-gradient(135deg,#1e3a5f,#2563eb);color:#60a5fa;">M</div>
+          <div>
+            <div id="confirm-msg" style="background:var(--n4);border:1px solid var(--bd);border-radius:12px;padding:10px 13px;font-size:14px;color:var(--w90);line-height:1.5;font-weight:500;border-bottom-left-radius:4px;"></div>
+            <div class="msg-time" style="margin-top:3px;">Today, 2:19 PM · 11 minutes later</div>
+          </div>
+        </div>
+        <div class="sys-badge">Appointment Engine · monitoring confirmed · cascade complete</div>
+      </div>
+      <div class="confirm-banner" id="confirm-banner">
+        <div class="cb-icon">✓</div>
+        <div>
+          <div class="cb-title">Appointment Confirmed</div>
+          <div class="cb-detail">Saturday · 11:00 AM · Marcus Torres · 2024 Ford Bronco Sport · 47hr from first contact</div>
+        </div>
+        <span class="badge b-g" style="margin-left:auto;font-size:9px;padding:4px 10px;">2 attempts</span>
+      </div>
+      <div class="stage-update" id="stage-update">
+        <div class="su-label">Deal Stage</div>
+        <div class="su-from">Scheduling</div>
+        <div class="su-arrow">→</div>
+        <div class="su-to">Committed</div>
+        <span class="badge b-g" style="margin-left:auto;">Updated</span>
+      </div>
+      <div class="card" style="padding:12px 14px;opacity:0;transition:opacity 0.4s;" id="auto-actions">
+        <div style="font-size:8.5px;font-weight:800;color:var(--w30);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;">Automated on Confirmation</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+          <div style="font-size:10px;color:var(--w60);display:flex;align-items:center;gap:6px;"><span style="color:var(--green);">✓</span> Confirmation reminder → Fri 6 PM</div>
+          <div style="font-size:10px;color:var(--w60);display:flex;align-items:center;gap:6px;"><span style="color:var(--green);">✓</span> Post-appt follow-up queued</div>
+          <div style="font-size:10px;color:var(--w60);display:flex;align-items:center;gap:6px;"><span style="color:var(--green);">✓</span> CRM stage updated automatically</div>
+          <div style="font-size:10px;color:var(--w60);display:flex;align-items:center;gap:6px;"><span style="color:var(--green);">✓</span> Momentum Score: Scheduling → 95</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ────────────────────────────────
+       SCREEN 7 — INTELLIGENCE UPDATES
+  ──────────────────────────────── -->
+  <div class="screen" id="s7">
+    <div class="eyebrow">Screen 07 · Intelligence</div>
+    <h2 style="font-size:clamp(18px,2.8vw,32px);font-weight:900;letter-spacing:-1px;color:#fff;text-align:center;margin-bottom:20px;">The intelligence layer updates.</h2>
+    <div class="intel-scene fade-in">
+      <!-- Deal Score card -->
+      <div class="score-card-big">
+        <div class="scb-header"><div class="scb-title">Deal Momentum Score</div></div>
+        <div class="scb-body">
+          <div class="scb-deal">Marcus Torres</div>
+          <div class="scb-vehicle">2024 Ford Bronco Sport · Day 2</div>
+          <div class="score-change-anim">
+            <span class="sca-was">78</span>
+            <span class="sca-arr">→</span>
+            <span class="sca-now" id="score-now">—</span>
+          </div>
+          <div class="score-display">
+            <div class="sd-num" id="intel-score">—</div>
+            <div class="sd-max">/100</div>
+            <div class="sd-badge-wrap">
+              <span class="badge b-g">Healthy</span>
+              <span style="font-size:8.5px;color:var(--green);margin-top:3px;">↑ Rising</span>
+            </div>
+          </div>
+          <div class="score-bar-wrap" style="height:5px;"><div class="score-bar-fill" id="intel-score-bar" style="background:linear-gradient(90deg,var(--teal),var(--green));"></div></div>
+          <div class="signal-mini" style="margin-top:10px;">
+            <div class="sm-row"><div class="sm-label">Response Velocity</div><div class="sm-bar-wrap"><div class="sm-bar" style="width:92%;"></div></div><div class="sm-val">92</div></div>
+            <div class="sm-row"><div class="sm-label">Follow-Up Discipline</div><div class="sm-bar-wrap"><div class="sm-bar" style="width:85%;"></div></div><div class="sm-val">85</div></div>
+            <div class="sm-row"><div class="sm-label">Scheduling Progression</div><div class="sm-bar-wrap"><div class="sm-bar" style="width:95%;background:var(--lime);"></div></div><div class="sm-val" style="color:var(--lime);">95</div></div>
+            <div class="sm-row"><div class="sm-label">Objection Resolution</div><div class="sm-bar-wrap"><div class="sm-bar" style="width:82%;"></div></div><div class="sm-val">82</div></div>
+          </div>
+        </div>
+      </div>
+      <!-- Pipeline summary -->
+      <div class="pipeline-summary">
+        <div class="card-hd"><span class="card-title">Pipeline Health</span><span class="badge b-t">Updated</span></div>
+        <div class="pipeline-bars">
+          <div class="pb-row pb-h"><div class="pb-num" id="ph-healthy">9</div><div><div style="font-size:9px;font-weight:800;color:var(--green);">Healthy</div><div class="pb-lbl">↑ was 8</div></div></div>
+          <div class="pb-row pb-r"><div class="pb-num">5</div><div><div style="font-size:9px;font-weight:800;color:var(--amber);">At Risk</div><div class="pb-lbl">unchanged</div></div></div>
+          <div class="pb-row pb-c"><div class="pb-num">2</div><div><div style="font-size:9px;font-weight:800;color:var(--red);">Critical</div><div class="pb-lbl">unchanged</div></div></div>
+        </div>
+        <div style="padding:0 12px 12px;">
+          <div style="padding:8px 10px;background:rgba(34,197,94,0.05);border:1px solid rgba(34,197,94,0.1);border-radius:7px;">
+            <div style="font-size:8.5px;color:var(--w30);text-transform:uppercase;letter-spacing:1px;font-weight:800;margin-bottom:3px;">System Note</div>
+            <div style="font-size:10px;color:var(--w60);line-height:1.4;">Marcus Torres moved from At Risk → Healthy on appointment confirmation. Scheduling Progression override lifted.</div>
+          </div>
+        </div>
+      </div>
+      <!-- Rep ranking -->
+      <div class="rep-rank-card">
+        <div class="card-hd"><span class="card-title">Rep Execution Rankings</span></div>
+        <div class="rep-list">
+          <div class="rl-row" style="background:rgba(200,224,50,0.05);border-color:rgba(200,224,50,0.1);">
+            <div class="rl-rank">#1</div>
+            <div class="rl-av" style="background:linear-gradient(135deg,var(--lime),#65a30d);color:#0a0f00;">R</div>
+            <div class="rl-name">Rivera, M.</div>
+            <div class="rl-bar-wrap"><div class="rl-bar" style="width:96%;background:var(--lime);"></div></div>
+            <div class="rl-score" style="color:var(--lime);">96</div>
+          </div>
+          <div class="rl-row">
+            <div class="rl-rank">#2</div>
+            <div class="rl-av" style="background:linear-gradient(135deg,var(--teal),#0e7490);color:#003330;">A</div>
+            <div class="rl-name">Adams, K.</div>
+            <div class="rl-bar-wrap"><div class="rl-bar" style="width:88%;background:var(--teal);"></div></div>
+            <div class="rl-score" style="color:var(--teal);">88</div>
+          </div>
+          <div class="rl-row">
+            <div class="rl-rank">#3</div>
+            <div class="rl-av" style="background:linear-gradient(135deg,var(--purple),#6d28d9);color:#fff;">C</div>
+            <div class="rl-name">Chen, S.</div>
+            <div class="rl-bar-wrap"><div class="rl-bar" style="width:74%;background:var(--purple);"></div></div>
+            <div class="rl-score" style="color:var(--purple);">74</div>
+          </div>
+          <div class="rl-row" style="background:rgba(239,68,68,0.04);border-color:rgba(239,68,68,0.1);">
+            <div class="rl-rank">#4</div>
+            <div class="rl-av" style="background:linear-gradient(135deg,var(--red),#b91c1c);color:#fff;">D</div>
+            <div class="rl-name">Park, D.</div>
+            <div class="rl-bar-wrap"><div class="rl-bar" style="width:38%;background:var(--red);"></div></div>
+            <div class="rl-score" style="color:var(--red);">38</div>
+          </div>
+        </div>
+        <div style="padding:0 12px 12px;">
+          <div style="padding:7px 10px;background:var(--w02);border:1px solid var(--bd);border-radius:6px;font-size:8.5px;color:var(--w40);line-height:1.4;">Response time 43sec on Torres deal pushed Rivera's response velocity score to 96. Rep ranking unchanged — Rivera holds #1.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ────────────────────────────────
+       SCREEN 8 — SUMMARY
+  ──────────────────────────────── -->
+  <div class="screen" id="s8">
+    <div class="eyebrow" style="justify-content:center;">System Complete</div>
+    <div class="summary-scene">
+      <div class="summary-header fade-in">
+        <h2>One message. <em>Seven outcomes.</em></h2>
+        <p>Zero additional effort from the rep. Everything else was infrastructure.</p>
+      </div>
+      <div class="summary-grid fade-in">
+        <div class="sum-card" style="border-top:2px solid var(--teal);">
+          <div class="sum-icon">⚡</div>
+          <div class="sum-title">Engine Activated</div>
+          <div class="sum-desc">Appointment Engine fired on vague scheduling signal. Confidence 0.91.</div>
+        </div>
+        <div class="sum-card" style="border-top:2px solid var(--lime);">
+          <div class="sum-icon">💬</div>
+          <div class="sum-title">Response Guided</div>
+          <div class="sum-desc">Binary choice protocol applied. Rep sent in 43 seconds without edits.</div>
+        </div>
+        <div class="sum-card" style="border-top:2px solid var(--green);">
+          <div class="sum-icon">📅</div>
+          <div class="sum-title">Appointment Booked</div>
+          <div class="sum-desc">Saturday 11AM confirmed. 2 attempts. 47hr from first contact.</div>
+        </div>
+        <div class="sum-card" style="border-top:2px solid var(--purple);">
+          <div class="sum-icon">📋</div>
+          <div class="sum-title">CRM Note Written</div>
+          <div class="sum-desc">5-field structured schema. Stage, trigger, position, next step, timeline.</div>
+        </div>
+        <div class="sum-card" style="border-top:2px solid var(--amber);">
+          <div class="sum-icon">📆</div>
+          <div class="sum-title">Follow-Up Scheduled</div>
+          <div class="sum-desc">4-tier cadence queued. Confirmation reminder set for Friday evening.</div>
+        </div>
+        <div class="sum-card" style="border-top:2px solid var(--blue);">
+          <div class="sum-icon">📡</div>
+          <div class="sum-title">Telemetry Recorded</div>
+          <div class="sum-desc">appt_engine_activated event. Feeds intelligence layer and benchmark network.</div>
+        </div>
+        <div class="sum-card" style="border-top:2px solid var(--green);grid-column:span 2;">
+          <div class="sum-icon">📊</div>
+          <div class="sum-title">Intelligence Updated</div>
+          <div class="sum-desc">Deal Momentum Score: 78 → 95. Stage override lifted. Pipeline health updated. Rep ranking reflects execution.</div>
+        </div>
+      </div>
+      <div class="summary-bottom fade-in">
+        <div class="sb-stat"><div class="sb-stat-num">1</div><div class="sb-stat-lbl">Message In</div></div>
+        <div class="sb-divider"></div>
+        <div class="sb-stat"><div class="sb-stat-num">7</div><div class="sb-stat-lbl">Operational Outputs</div></div>
+        <div class="sb-divider"></div>
+        <div class="sb-stat"><div class="sb-stat-num">43s</div><div class="sb-stat-lbl">Response Time</div></div>
+        <div class="sb-divider"></div>
+        <div class="sb-tagline"><strong>This is what execution infrastructure does.</strong><br>Not AI. Not a chatbot. A system that enforces outcomes.</div>
+      </div>
+      <div class="engine-switcher fade-in">
+        <div class="es-label">Explore other scenarios →</div>
+        <button class="es-btn current" onclick="loadScenario('appointment')">Appointment Engine</button>
+        <button class="es-btn" onclick="loadScenario('followup')">Follow-Up Engine</button>
+        <button class="es-btn" onclick="loadScenario('qualification')">Qualification Engine</button>
+        <button class="es-btn" onclick="loadScenario('recovery')">Lead Recovery Engine</button>
+      </div>
+      <div class="cta-wrap fade-in">
+        <button class="cta-btn cta-secondary" onclick="restartDemo()">↺ Restart Demo</button>
+        <button class="cta-btn cta-primary">Start Your 30-Day Execution Audit →</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /stage -->
+
+<!-- NAV BAR -->
+<div id="nav-bar">
+  <button class="nav-btn nav-btn-back" id="btn-back" onclick="goBack()">← Back</button>
+  <div class="nav-center">
+    <div class="nav-counter" id="nav-counter">Screen 1 of 8</div>
+    <div class="nav-dots" id="nav-dots"></div>
+  </div>
+  <button class="nav-btn nav-btn-next" id="btn-next" onclick="goNext()">Continue →</button>
+</div>
+
+<script>
+(function(){
+
+// ── STATE ──
+var TOTAL = 8;
+var current = 1;
+var animDone = {};
+var scenario = 'appointment';
+
+// Scenario data for all 4 engines
+var scenarios = {
+  appointment: {
+    engine: 'Appointment Engine',
+    engineCode: 'E01',
+    customer: 'Marcus Torres',
+    vehicle: '2024 Ford Bronco Sport · $34,990',
+    inbound: '"Yeah I\'m definitely interested. I might try to swing by sometime this weekend if I\'m free"',
+    signals: [
+      { icon:'📅', label:'vague_scheduling_interest', detail:'"might try to swing by" · "sometime this weekend" · "if I\'m free" — conditional language detected', conf:'0.91', hot:false },
+      { icon:'💬', label:'scheduling_readiness', detail:'Lead at message 3. Interest confirmed across prior messages. Appointment stage appropriate.', conf:'0.88', hot:false },
+      { icon:'⚡', label:'commitment_gap', detail:'Interest genuine but unanchored. No time, date, or specific intent confirmed.', conf:'0.94', hot:false },
+      { icon:'🏁', label:'price_objection', detail:'No pricing friction detected. Objection Engine not triggered.', conf:'absent', hot:false },
+      { icon:'🎯', label:'engine_routing → Appointment Engine', detail:'All routing criteria met. Engine selected. Response protocol loaded.', conf:'routed', hot:true },
+    ],
+    guided: '"Sounds great Marcus — the Bronco Sport is here and ready. I\'ve got two spots open this weekend: Saturday at 11 AM or Sunday at 2 PM. Which one works better for you?"',
+    tags: ['Binary Choice Presentation','Assumptive Language','Value Reinforcement','Commitment Gap Ignored'],
+    reply: '"Saturday at 11 works. Do I need to bring anything?"',
+    confirmed: 'Appointment Confirmed · Saturday 11:00 AM · 47hr from first contact',
+  },
+  followup: {
+    engine: 'Follow-Up Engine',
+    engineCode: 'E03',
+    customer: 'Rachel Kim',
+    vehicle: '2025 Toyota Camry XSE',
+    inbound: '[No inbound message — Tier 1 cadence timer elapsed after 26hr silence]',
+    signals: [
+      { icon:'⏱', label:'lead_silence_tier_1', detail:'Last customer message: 26 hours ago. Tier 1 threshold (24hr) exceeded.', conf:'time-based', hot:false },
+      { icon:'💬', label:'prior_engagement_high', detail:'2 substantive messages. Specific questions about color and financing.', conf:'high', hot:false },
+      { icon:'❓', label:'unanswered_question', detail:'Rep asked about preferred term length. No response received. Conversation incomplete.', conf:'0.90', hot:false },
+      { icon:'🏁', label:'disengagement_signals', detail:'No unsubscribe or negative signals. Lead went silent after positive exchange.', conf:'absent', hot:false },
+      { icon:'🎯', label:'engine_routing → Follow-Up Engine', detail:'Tier 1 trigger criteria met. Value continuation protocol selected.', conf:'routed', hot:true },
+    ],
+    guided: '"Hey Rachel — I pulled up the numbers on the Camry XSE in Celestial Silver. With a 72-month term you\'d be right around $475/mo, and the 60-month comes in at $540. Both are with zero down. Want me to get those exact numbers locked in for you?"',
+    tags: ['Value Continuation','No Silence Reference','New Information','Low-Friction Next Step'],
+    reply: '"Oh sorry I got busy at work! The 72 month at $475 sounds great. How do I get started?"',
+    confirmed: 'Lead Re-Engaged · Tier 1 Recovery · Buying Signal Detected',
+  },
+  qualification: {
+    engine: 'Qualification Engine',
+    engineCode: 'E04',
+    customer: 'David Okafor',
+    vehicle: '2024 Chevrolet Tahoe',
+    inbound: '"Yeah the Tahoe looks great. What\'s the best time to come check it out?"',
+    signals: [
+      { icon:'📅', label:'scheduling_readiness', detail:'Strong scheduling signal detected. Customer is ready to visit.', conf:'0.93', hot:false },
+      { icon:'⚠️', label:'qualification_gap', detail:'Timeline: empty · Authority: empty · Trade-in: empty · Budget: empty. 4 of 5 fields missing.', conf:'0.87', hot:false },
+      { icon:'👥', label:'family_vehicle_indicator', detail:'Tahoe context suggests joint decision potential. Authority field incomplete.', conf:'0.72', hot:false },
+      { icon:'⚖️', label:'engine_priority_resolution', detail:'Appointment Engine has higher priority. Schedule first, qualify during. One embedded question permitted.', conf:'resolved', hot:false },
+      { icon:'🎯', label:'engine_routing → Qualification Engine', detail:'Parallel activation with Appointment Engine. Single embedded question authorized.', conf:'parallel', hot:true },
+    ],
+    guided: '"The Tahoe is here and looks incredible in person. I\'ve got availability tomorrow at 3 PM or Thursday at 5:30 PM — which works better? And will it just be you, or are you bringing anyone else along so I can make sure we\'re set up for everyone?"',
+    tags: ['Scheduling First','One Embedded Question','Authority Capture','No Information Extraction Framing'],
+    reply: '"Thursday at 5:30 works. I\'ll bring my wife — she\'s the one who really wants the third row haha"',
+    confirmed: 'Appointment Confirmed · Thursday 5:30 PM · Authority + Need Signal Captured',
+  },
+  recovery: {
+    engine: 'Lead Recovery Engine',
+    engineCode: 'E05',
+    customer: 'James Whitfield',
+    vehicle: '2024 GMC Sierra 1500 AT4',
+    inbound: '[No inbound — system-initiated on new inventory match after 23 days dormancy]',
+    signals: [
+      { icon:'💤', label:'lead_dormant_23_days', detail:'Last interaction 23 days ago. Follow-Up Engine completed Tiers 1–5. No response to any tier.', conf:'dormant', hot:false },
+      { icon:'🚗', label:'recovery_candidate_inventory_match', detail:'New Sierra AT4 Premium · Volcanic Red · $2,400 below original inquiry unit. Exact configuration match.', conf:'0.97', hot:false },
+      { icon:'💰', label:'price_advantage_signal', detail:'New unit $2,400 under original. Price delta creates genuine re-engagement trigger.', conf:'high', hot:false },
+      { icon:'📋', label:'prior_questions_on_record', detail:'Customer asked specifically about towing capacity. Recovery message can reference directly.', conf:'recoverable', hot:false },
+      { icon:'🎯', label:'engine_routing → Lead Recovery Engine', detail:'New inventory trigger selected — highest confidence recovery approach. System-initiated outreach authorized.', conf:'routed', hot:true },
+    ],
+    guided: '"Hey James — a Sierra AT4 just came in that I thought you\'d want to know about. It\'s the Premium package in Volcanic Red, and it\'s listed about $2,400 under the one you were looking at. Tows 13,200 lbs. Want me to send over the details?"',
+    tags: ['New Information Trigger','Direct Lead Connection','No Silence Reference','3-Sentence Maximum'],
+    reply: '"Oh nice, yeah send me what you got. I actually just started looking again this week"',
+    confirmed: 'Lead Recovered · 23 Days Dormancy · Active Buyer Signal Detected',
+  }
+};
+
+// ── BUILD HEADER STEPS ──
+var stepLabels = ['Message','Detection','Engine','Response','Cascade','Confirmed','Intelligence','Summary'];
+var hdSteps = document.getElementById('hd-steps');
+stepLabels.forEach(function(l,i){
+  var el = document.createElement('div');
+  el.className = 'hd-step' + (i===0?' active':'');
+  el.id = 'hstep'+(i+1);
+  el.innerHTML = '<span class="hd-step-num">0'+(i+1)+'</span><span>'+l+'</span>';
+  el.addEventListener('click',function(){gotoScreen(i+1);});
+  hdSteps.appendChild(el);
+});
+
+// ── BUILD NAV DOTS ──
+var navDots = document.getElementById('nav-dots');
+for(var i=0;i<TOTAL;i++){
+  var d = document.createElement('div');
+  d.className='nav-dot'+(i===0?' active done':'');
+  d.id='nd'+(i+1);
+  navDots.appendChild(d);
+}
+
+// ── SCREEN MANAGEMENT ──
+function gotoScreen(n){
+  if(n<1||n>TOTAL) return;
+  var prev = document.getElementById('s'+current);
+  var next = document.getElementById('s'+n);
+  if(prev){ prev.classList.remove('active'); prev.classList.add('exiting'); setTimeout(function(){prev.classList.remove('exiting');},500); }
+  if(next){ next.classList.add('active'); }
+  current = n;
+  updateUI();
+  if(!animDone[n]) { animScreen(n); animDone[n]=true; }
+}
+
+function goNext(){ if(current<TOTAL) gotoScreen(current+1); }
+function goBack(){ if(current>1) gotoScreen(current-1); }
+function restartDemo(){
+  animDone={};
+  gotoScreen(1);
+}
+
+function updateUI(){
+  // progress
+  document.getElementById('progress').style.width = ((current/TOTAL)*100)+'%';
+  // counter
+  document.getElementById('nav-counter').textContent = 'Screen '+current+' of '+TOTAL;
+  // header steps
+  for(var i=1;i<=TOTAL;i++){
+    var el=document.getElementById('hstep'+i);
+    if(!el)continue;
+    el.className='hd-step'+(i===current?' active':i<current?' done':'');
+  }
+  // nav dots
+  for(var i=1;i<=TOTAL;i++){
+    var d=document.getElementById('nd'+i);
+    if(!d)continue;
+    d.className='nav-dot'+(i===current?' active':i<current?' done':'');
+  }
+  // btns
+  document.getElementById('btn-back').style.opacity = current===1?'0.3':'1';
+  document.getElementById('btn-back').disabled = current===1;
+  document.getElementById('btn-next').textContent = current===TOTAL?'Explore Scenarios →':'Continue →';
+  if(current===TOTAL){
+    document.getElementById('btn-next').onclick = function(){ document.querySelector('.engine-switcher').scrollIntoView({behavior:'smooth'}); };
+  } else {
+    document.getElementById('btn-next').onclick = goNext;
+  }
+}
+
+// ── ANIMATIONS ──
+function animScreen(n){
+  if(n===1) animS1();
+  if(n===2) animS2();
+  if(n===3) animS3();
+  if(n===4) animS4();
+  if(n===5) animS5();
+  if(n===6) animS6();
+  if(n===7) animS7();
+  if(n===8) animS8();
+}
+
+// S1: typing → message appears
+function animS1(){
+  var sc = scenarios[scenario];
+  var ti = document.getElementById('typing-ind');
+  var thread = document.getElementById('s1-thread');
+  // update header
+  document.getElementById('active-engine-label').textContent = sc.engine;
+  ti.classList.add('vis');
+  setTimeout(function(){
+    ti.classList.remove('vis');
+    ti.style.display='none';
+    var msg = document.createElement('div');
+    msg.className='msg msg-in';
+    msg.style.opacity='0';
+    msg.style.transform='translateY(8px)';
+    msg.style.transition='opacity 0.4s ease,transform 0.4s ease';
+    var av = '<div class="msg-av" style="background:linear-gradient(135deg,#1e3a5f,#2563eb);color:#60a5fa;">'+sc.customer.charAt(0)+'</div>';
+    msg.innerHTML = av + '<div><div class="msg-bubble">'+sc.inbound+'</div><div class="msg-time">Today, 2:08 PM</div><div class="sys-badge">'+sc.engine+' · analyzing...</div></div>';
+    thread.appendChild(msg);
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        msg.style.opacity='1';
+        msg.style.transform='translateY(0)';
+      });
+    });
+  }, 1800);
+}
+
+// S2: signals appear sequentially
+function animS2(){
+  var sc = scenarios[scenario];
+  // Rebuild signal list
+  var list = document.getElementById('signal-list');
+  list.innerHTML = '';
+  sc.signals.forEach(function(s,i){
+    var confClass = s.conf==='absent'?'conf-na':s.conf==='routed'||s.conf==='parallel'?'conf-na':'conf-high';
+    var el = document.createElement('div');
+    el.className='signal-item'+(s.hot?' hot':'');
+    el.setAttribute('data-delay',i);
+    el.innerHTML='<div class="si-icon">'+s.icon+'</div><div class="si-content"><div class="si-label">'+s.label+'</div><div class="si-detail">'+s.detail+'</div></div><div class="si-conf '+confClass+'">'+s.conf+'</div>';
+    list.appendChild(el);
+    setTimeout(function(){ el.classList.add('vis'); }, 400 + i*320);
+  });
+  // word tags on existing bubble
+  var wt = ['wt1','wt2','wt3'];
+  wt.forEach(function(id,i){
+    var el = document.getElementById(id);
+    if(!el)return;
+    setTimeout(function(){ if(el) el.classList.add('tagged'); }, 600+i*280);
+  });
+  setTimeout(function(){
+    var sb = document.getElementById('stage-banner');
+    if(sb) sb.classList.add('vis');
+  }, 400+5*320);
+}
+
+// S3: engine diagram + activation
+function animS3(){
+  var sc = scenarios[scenario];
+  var center = document.getElementById('ed-center');
+  var svg = document.getElementById('eng-svg-el');
+  var diag = document.getElementById('eng-diag');
+
+  // Draw SVG lines from center to each engine node
+  var W=580,H=280,cx=W/2,cy=H/2;
+  var nodes = [{id:'en-appt'},{id:'en-obj'},{id:'en-fu'},{id:'en-qual'},{id:'en-rec'}];
+  var svgHtml = '';
+  nodes.forEach(function(n){
+    var el = document.getElementById(n.id);
+    if(!el)return;
+    var nx = parseInt(el.style.left)/100*W + 55;
+    var ny = parseInt(el.style.top)/100*H + 20;
+    svgHtml += '<line x1="'+cx+'" y1="'+cy+'" x2="'+nx+'" y2="'+ny+'" stroke="rgba(0,212,200,0.1)" stroke-width="1.5" stroke-dasharray="4 3" class="eng-line" id="el-'+n.id+'"/>';
+  });
+  svg.innerHTML = svgHtml;
+
+  // Map engine IDs to scenario
+  var engineMap = { appointment:'en-appt', followup:'en-fu', qualification:'en-qual', recovery:'en-rec' };
+  var activeId = engineMap[scenario];
+
+  // Step 1: center fires
+  setTimeout(function(){ center.classList.add('firing'); }, 400);
+
+  // Step 2: all lines appear
+  setTimeout(function(){
+    var lines = svg.querySelectorAll('.eng-line');
+    lines.forEach(function(l){ l.setAttribute('stroke','rgba(0,212,200,0.15)'); });
+  }, 800);
+
+  // Step 3: active engine lights up
+  setTimeout(function(){
+    // Dim all first
+    ['en-appt','en-obj','en-fu','en-qual','en-rec'].forEach(function(id){
+      var el = document.getElementById(id);
+      if(el){ el.classList.add('dimmed'); el.classList.remove('active-eng'); }
+    });
+    // Activate the right one
+    var activeEl = document.getElementById(activeId);
+    if(activeEl){
+      activeEl.classList.remove('dimmed');
+      activeEl.classList.add('active-eng');
+    }
+    // Light up the line to active engine
+    var activeLine = document.getElementById('el-'+activeId);
+    if(activeLine){ activeLine.setAttribute('stroke','rgba(200,224,50,0.5)'); activeLine.setAttribute('stroke-width','2'); }
+  }, 1200);
+
+  // Step 4: activation text
+  setTimeout(function(){
+    var at = document.getElementById('act-text');
+    if(at){
+      at.innerHTML = '<strong>'+sc.engine+' activated</strong> — '+sc.signals[0].label+' detected · confidence '+sc.signals[0].conf;
+      at.classList.add('vis');
+    }
+  }, 1800);
+}
+
+// S4: guided response types in
+function animS4(){
+  var sc = scenarios[scenario];
+  var wrap = document.getElementById('resp-guided-wrap');
+  wrap.innerHTML = '';
+  var bubble = document.createElement('div');
+  bubble.className = 'msg msg-out';
+  bubble.innerHTML = '<div class="msg-av" style="background:linear-gradient(135deg,#0d3026,#065f46);color:#34d399;">R</div><div><div class="msg-bubble cursor" id="typing-resp"></div><div class="msg-time">Today, 2:09 PM</div></div>';
+  wrap.appendChild(bubble);
+
+  var el = document.getElementById('typing-resp');
+  var txt = sc.guided;
+  var i = 0;
+  var spd = Math.max(12, 1800/txt.length);
+  var iv = setInterval(function(){
+    if(i<txt.length){
+      el.textContent = txt.slice(0,i+1);
+      i++;
+    } else {
+      el.classList.remove('cursor');
+      clearInterval(iv);
+      // Show tags
+      var tags = document.querySelectorAll('#resp-thread ~ div .stag, .resp-scene .stag');
+      var stags = document.querySelectorAll('.stag');
+      stags.forEach(function(t,j){
+        t.textContent = sc.tags[j]||t.textContent;
+        setTimeout(function(){ t.classList.add('vis'); }, j*120);
+      });
+      setTimeout(function(){
+        var rb = document.getElementById('rep-badge');
+        if(rb) rb.classList.add('vis');
+      }, 600);
+    }
+  }, spd);
+}
+
+// S5: cascade cards appear
+function animS5(){
+  var cards = ['cc1','cc2','cc3','cc4'];
+  cards.forEach(function(id,i){
+    setTimeout(function(){
+      var el = document.getElementById(id);
+      if(el) el.classList.add('vis');
+    }, 200 + i*200);
+  });
+  // Animate score bar
+  setTimeout(function(){
+    var sf = document.getElementById('score-fill');
+    if(sf) sf.style.width = '78%';
+  }, 600);
+  // Fade in title
+  document.querySelectorAll('#s5 .fade-in').forEach(function(el){
+    setTimeout(function(){ el.classList.add('vis'); },100);
+  });
+}
+
+// S6: customer reply types in + confirm banner
+function animS6(){
+  var sc = scenarios[scenario];
+  var el = document.getElementById('confirm-msg');
+  if(!el)return;
+  var txt = sc.reply;
+  var i = 0;
+  el.className = 'cursor';
+  var iv = setInterval(function(){
+    if(i<txt.length){
+      el.textContent = txt.slice(0,i+1);
+      i++;
+    } else {
+      el.classList.remove('cursor');
+      clearInterval(iv);
+    }
+  }, 30);
+
+  setTimeout(function(){
+    var cb = document.getElementById('confirm-banner');
+    if(cb){
+      cb.querySelector('.cb-title').textContent = sc.confirmed.split(' · ')[0];
+      cb.querySelector('.cb-detail').textContent = sc.confirmed.split(' · ').slice(1).join(' · ');
+      cb.classList.add('vis');
+    }
+  }, 1200);
+  setTimeout(function(){
+    var su = document.getElementById('stage-update');
+    if(su) su.classList.add('vis');
+  }, 1800);
+  setTimeout(function(){
+    var aa = document.getElementById('auto-actions');
+    if(aa) aa.style.opacity='1';
+  }, 2400);
+}
+
+// S7: intelligence updates with counting animation
+function animS7(){
+  document.querySelectorAll('#s7 .fade-in').forEach(function(el){
+    setTimeout(function(){ el.classList.add('vis'); },100);
+  });
+  // Animate score counting up
+  var scoreEl = document.getElementById('intel-score');
+  var scoreNow = document.getElementById('score-now');
+  var target = 95;
+  var start = 78;
+  var cur = start;
+  setTimeout(function(){
+    var iv = setInterval(function(){
+      if(cur<target){
+        cur++;
+        if(scoreEl) scoreEl.textContent = cur;
+        if(scoreNow) scoreNow.textContent = cur;
+      } else {
+        clearInterval(iv);
+      }
+    }, 30);
+    var bar = document.getElementById('intel-score-bar');
+    if(bar) bar.style.width = target+'%';
+  }, 800);
+}
+
+// S8: summary fade-ins
+function animS8(){
+  var els = document.querySelectorAll('#s8 .fade-in');
+  els.forEach(function(el,i){
+    setTimeout(function(){ el.classList.add('vis'); }, 100+i*150);
+  });
+}
+
+// ── SCENARIO SWITCHER ──
+window.loadScenario = function(sc){
+  scenario = sc;
+  animDone = {};
+  // Update engine switcher buttons
+  document.querySelectorAll('.es-btn').forEach(function(b){
+    b.classList.remove('current');
+  });
+  event.target.classList.add('current');
+  // Update engine label
+  document.getElementById('active-engine-label').textContent = scenarios[sc].engine;
+  // Reset screen 1 thread
+  var thread = document.getElementById('s1-thread');
+  var msgs = thread.querySelectorAll('.msg:not(.msg-prev)');
+  msgs.forEach(function(m){ m.remove(); });
+  var ti = document.getElementById('typing-ind');
+  ti.style.display = '';
+  ti.classList.remove('vis');
+  // Reset other screens
+  resetScreenContent();
+  gotoScreen(1);
+};
+
+function resetScreenContent(){
+  // Reset detect word tags
+  ['wt1','wt2','wt3'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.classList.remove('tagged');
+  });
+  // Reset signals
+  document.querySelectorAll('.signal-item').forEach(function(el){ el.classList.remove('vis'); });
+  // Reset stage banner
+  var sb = document.getElementById('stage-banner');
+  if(sb) sb.classList.remove('vis');
+  // Reset engine nodes
+  ['en-appt','en-obj','en-fu','en-qual','en-rec'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el){ el.classList.add('dimmed'); el.classList.remove('active-eng'); }
+  });
+  document.getElementById('ed-center').classList.remove('firing');
+  var at = document.getElementById('act-text');
+  if(at) at.classList.remove('vis');
+  // Reset response
+  var wrap = document.getElementById('resp-guided-wrap');
+  if(wrap) wrap.innerHTML='';
+  document.querySelectorAll('.stag').forEach(function(t){ t.classList.remove('vis'); });
+  var rb = document.getElementById('rep-badge');
+  if(rb) rb.classList.remove('vis');
+  // Reset cascade
+  ['cc1','cc2','cc3','cc4'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.classList.remove('vis');
+  });
+  // Reset confirm
+  var cm = document.getElementById('confirm-msg');
+  if(cm) cm.textContent='';
+  var cb = document.getElementById('confirm-banner');
+  if(cb) cb.classList.remove('vis');
+  var su = document.getElementById('stage-update');
+  if(su) su.classList.remove('vis');
+  var aa = document.getElementById('auto-actions');
+  if(aa) aa.style.opacity='0';
+  // Reset intel
+  var si = document.getElementById('intel-score');
+  if(si) si.textContent='—';
+  var sn = document.getElementById('score-now');
+  if(sn) sn.textContent='—';
+  var ib = document.getElementById('intel-score-bar');
+  if(ib) ib.style.width='0%';
+  // Reset score fill
+  var sf = document.getElementById('score-fill');
+  if(sf) sf.style.width='0%';
+}
+
+// ── KEYBOARD NAV ──
+document.addEventListener('keydown',function(e){
+  if(e.key==='ArrowRight'||e.key===' ') goNext();
+  if(e.key==='ArrowLeft') goBack();
+});
+
+// ── RESTART ──
+window.restartDemo = function(){
+  animDone={};
+  resetScreenContent();
+  gotoScreen(1);
+};
+
+// ── INIT ──
+gotoScreen(1);
+updateUI();
+
+})();
+</script>
+</body>
+</html>

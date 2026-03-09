@@ -1,0 +1,1488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oper8er — Sales Execution Infrastructure</title>
+<style>
+/* ── DESIGN SYSTEM ─────────────────────────────────────── */
+:root {
+  --navy: #080f18;
+  --navy-card: #0d1b2a;
+  --navy-deep: #050b12;
+  --teal: #00d4c8;
+  --teal-dim: rgba(0,212,200,0.12);
+  --lime: #c8e032;
+  --lime-dim: rgba(200,224,50,0.1);
+  --purple: #a78bfa;
+  --green: #22c55e;
+  --white: #ffffff;
+  --white-60: rgba(255,255,255,0.6);
+  --white-40: rgba(255,255,255,0.4);
+  --white-20: rgba(255,255,255,0.2);
+  --white-08: rgba(255,255,255,0.08);
+  --white-04: rgba(255,255,255,0.04);
+  --border: rgba(255,255,255,0.06);
+  --border-teal: rgba(0,212,200,0.15);
+  --border-lime: rgba(200,224,50,0.15);
+  --font: -apple-system,'Helvetica Neue',Arial,sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--navy);
+  color: var(--white);
+  font-family: var(--font);
+  line-height: 1.5;
+  overflow-x: hidden;
+}
+
+/* ── UTILITIES ─────────────────────────────────────────── */
+.container { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+.section { padding: 100px 0; }
+.section-dark { background: var(--navy-deep); }
+.section-alt { background: #060c14; }
+
+.label {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 10px; font-weight: 700; letter-spacing: 2.5px;
+  text-transform: uppercase; color: var(--teal); margin-bottom: 20px;
+}
+.label::before {
+  content: ''; width: 20px; height: 1px; background: var(--teal); opacity: 0.5;
+}
+
+.section-title {
+  font-size: clamp(28px, 4vw, 46px); font-weight: 900;
+  letter-spacing: -1px; line-height: 1.1; margin-bottom: 16px;
+}
+.section-sub {
+  font-size: 16px; color: var(--white-40); line-height: 1.65;
+  max-width: 540px;
+}
+
+.badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 9px; font-weight: 700; letter-spacing: 0.8px;
+  text-transform: uppercase; padding: 3px 8px; border-radius: 20px;
+}
+.badge-teal { background: rgba(0,212,200,0.1); color: var(--teal); border: 1px solid rgba(0,212,200,0.2); }
+.badge-lime { background: rgba(200,224,50,0.1); color: var(--lime); border: 1px solid rgba(200,224,50,0.2); }
+.badge-green { background: rgba(34,197,94,0.1); color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
+.badge-purple { background: rgba(167,139,250,0.1); color: var(--purple); border: 1px solid rgba(167,139,250,0.2); }
+.badge-red { background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
+
+/* Scroll reveal */
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.55s ease, transform 0.55s ease; }
+.reveal.vis { opacity: 1; transform: translateY(0); }
+.reveal-d1 { transition-delay: 0.08s; }
+.reveal-d2 { transition-delay: 0.16s; }
+.reveal-d3 { transition-delay: 0.24s; }
+.reveal-d4 { transition-delay: 0.32s; }
+.reveal-d5 { transition-delay: 0.40s; }
+
+/* ── NAV ───────────────────────────────────────────────── */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(8,15,24,0.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 24px; max-width: 1080px; margin: 0 auto;
+}
+.nav-logo {
+  font-size: 18px; font-weight: 900; letter-spacing: -0.5px; color: var(--white);
+  text-decoration: none;
+}
+.nav-logo span { color: var(--teal); }
+.nav-links { display: flex; align-items: center; gap: 32px; }
+.nav-links a {
+  font-size: 13px; color: var(--white-40); text-decoration: none;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--white); }
+.nav-cta {
+  background: var(--lime); color: #0a0f0a; border: none;
+  border-radius: 8px; font-size: 12px; font-weight: 800; letter-spacing: 0.3px;
+  padding: 10px 20px; cursor: pointer; text-decoration: none;
+  transition: background 0.15s;
+}
+.nav-cta:hover { background: #d4ec3c; }
+
+/* ── SECTION 1: HERO ───────────────────────────────────── */
+.hero {
+  padding: 120px 0 80px;
+  position: relative; overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 60% 0%, rgba(0,212,200,0.06) 0%, transparent 60%),
+              radial-gradient(ellipse at 20% 80%, rgba(200,224,50,0.04) 0%, transparent 50%);
+  pointer-events: none;
+}
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(0,212,200,0.06); border: 1px solid rgba(0,212,200,0.15);
+  border-radius: 20px; padding: 6px 14px; margin-bottom: 32px;
+  font-size: 11px; font-weight: 700; color: var(--teal); letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+.hero-eyebrow-dot {
+  width: 5px; height: 5px; border-radius: 50%; background: var(--teal);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)}
+}
+.hero-headline {
+  font-size: clamp(44px, 7vw, 88px);
+  font-weight: 900; line-height: 0.97; letter-spacing: -3px;
+  margin-bottom: 28px; max-width: 820px;
+}
+.hero-headline em { font-style: normal; color: var(--teal); }
+.hero-sub {
+  font-size: clamp(15px, 1.8vw, 18px); color: var(--white-40);
+  line-height: 1.65; max-width: 540px; margin-bottom: 44px;
+}
+.hero-ctas { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.cta-primary {
+  background: var(--lime); color: #0a0f0a; border: none;
+  border-radius: 10px; font-size: 14px; font-weight: 800;
+  padding: 16px 32px; cursor: pointer; text-decoration: none;
+  transition: background 0.15s, transform 0.15s;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.cta-primary:hover { background: #d4ec3c; transform: translateY(-1px); }
+.cta-secondary {
+  font-size: 13px; font-weight: 600; color: var(--white-40);
+  text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+  transition: color 0.2s;
+}
+.cta-secondary:hover { color: var(--white); }
+
+.hero-metrics {
+  display: flex; align-items: center; gap: 0;
+  margin-top: 64px; padding-top: 40px;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap; gap: 0;
+}
+.hero-metric {
+  flex: 1; min-width: 140px; padding: 0 32px 0 0;
+}
+.hero-metric:first-child { padding-left: 0; }
+.hero-metric-val {
+  font-size: 36px; font-weight: 900; letter-spacing: -1.5px; line-height: 1;
+  color: var(--white); margin-bottom: 4px;
+}
+.hero-metric-val span { font-size: 18px; color: var(--teal); font-weight: 700; }
+.hero-metric-label { font-size: 11px; color: var(--white-40); font-weight: 500; }
+.hero-metric-delta { font-size: 10px; color: var(--green); font-weight: 700; margin-top: 2px; }
+.hero-metric-divider {
+  width: 1px; height: 40px; background: var(--border);
+  margin-right: 32px; flex-shrink: 0; align-self: center;
+}
+
+/* ── SECTION 2: EXECUTION PROBLEM ─────────────────────── */
+.problem-intro {
+  max-width: 700px; margin-bottom: 64px;
+}
+.problem-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2px; background: var(--border); border-radius: 16px; overflow: hidden;
+}
+.problem-card {
+  background: var(--navy-card); padding: 32px 28px;
+  position: relative; overflow: hidden;
+}
+.problem-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: 2px; background: var(--border-teal);
+}
+.problem-card.critical::before { background: rgba(239,68,68,0.4); }
+.problem-num {
+  font-size: 11px; font-weight: 800; color: var(--white-20);
+  letter-spacing: 2px; margin-bottom: 14px;
+}
+.problem-title {
+  font-size: 17px; font-weight: 800; color: var(--white);
+  letter-spacing: -0.3px; margin-bottom: 10px; line-height: 1.2;
+}
+.problem-desc {
+  font-size: 13px; color: var(--white-40); line-height: 1.6;
+}
+.problem-signal {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: 14px; padding: 5px 10px; background: rgba(239,68,68,0.08);
+  border: 1px solid rgba(239,68,68,0.15); border-radius: 6px;
+  font-size: 10px; font-weight: 700; color: #f87171; letter-spacing: 0.5px;
+}
+
+.problem-root {
+  margin-top: 48px; padding: 32px 36px;
+  background: rgba(200,224,50,0.04); border: 1px solid rgba(200,224,50,0.12);
+  border-radius: 14px; display: flex; align-items: flex-start; gap: 20px;
+}
+.problem-root-icon {
+  width: 42px; height: 42px; border-radius: 50%; background: rgba(200,224,50,0.1);
+  border: 1px solid rgba(200,224,50,0.2); display: flex; align-items: center;
+  justify-content: center; flex-shrink: 0;
+}
+.problem-root-title { font-size: 15px; font-weight: 800; color: var(--white); margin-bottom: 6px; }
+.problem-root-desc { font-size: 13px; color: var(--white-40); line-height: 1.6; }
+
+/* ── SECTION 3: ENGINE DEMO ────────────────────────────── */
+.demo-wrap {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 24px; align-items: start;
+}
+.demo-left { display: flex; flex-direction: column; gap: 12px; }
+
+/* Inbound message */
+.demo-message-card {
+  background: var(--navy-card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 20px;
+}
+.demo-message-label {
+  font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--white-20); margin-bottom: 10px;
+}
+.demo-message-bubble {
+  background: #1e2833; border-radius: 10px; padding: 12px 14px;
+  font-size: 13px; color: var(--white); line-height: 1.5;
+  border-left: 3px solid rgba(255,255,255,0.15);
+}
+.demo-message-meta {
+  font-size: 10px; color: var(--white-20); margin-top: 8px; display: flex; gap: 12px;
+}
+
+/* Intent detection */
+.demo-detection {
+  background: var(--navy-card); border: 1px solid var(--border-teal);
+  border-radius: 12px; padding: 20px; position: relative;
+}
+.demo-detection::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: var(--teal); border-radius: 2px 2px 0 0;
+}
+.demo-detection-title { font-size: 11px; font-weight: 700; color: var(--teal); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 12px; }
+.demo-signals { display: flex; flex-direction: column; gap: 7px; }
+.demo-signal-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 10px; background: var(--white-04); border-radius: 7px;
+}
+.demo-signal-name { font-size: 11px; color: var(--white-60); }
+.demo-signal-val { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; }
+.sig-detected { background: rgba(239,68,68,0.12); color: #f87171; }
+.sig-clear { background: rgba(34,197,94,0.12); color: var(--green); }
+.sig-med { background: rgba(251,191,36,0.12); color: #fbbf24; }
+
+/* Engine selection */
+.demo-engine {
+  background: var(--navy-card); border: 1px solid var(--border-lime);
+  border-radius: 12px; padding: 20px;
+}
+.demo-engine-title { font-size: 11px; font-weight: 700; color: var(--lime); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 12px; }
+.demo-engine-active {
+  background: rgba(200,224,50,0.06); border: 1px solid rgba(200,224,50,0.2);
+  border-radius: 9px; padding: 12px 14px;
+  display: flex; align-items: center; gap: 12px;
+}
+.demo-engine-icon {
+  width: 32px; height: 32px; border-radius: 8px; background: rgba(200,224,50,0.12);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.demo-engine-name { font-size: 14px; font-weight: 800; color: var(--white); }
+.demo-engine-desc { font-size: 11px; color: var(--white-40); margin-top: 1px; }
+.demo-engine-inactive {
+  margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap;
+}
+.demo-engine-pill {
+  font-size: 9px; font-weight: 600; color: var(--white-20);
+  background: var(--white-04); border: 1px solid var(--border);
+  padding: 3px 8px; border-radius: 10px;
+}
+
+/* Response output */
+.demo-right { display: flex; flex-direction: column; gap: 12px; }
+.demo-response {
+  background: var(--navy-card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 20px;
+}
+.demo-response-title { font-size: 11px; font-weight: 700; color: var(--white-40); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 12px; }
+.demo-bad {
+  background: rgba(239,68,68,0.05); border: 1px solid rgba(239,68,68,0.12);
+  border-radius: 9px; padding: 12px 14px; margin-bottom: 8px;
+}
+.demo-bad-label { font-size: 9px; font-weight: 700; color: #f87171; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; gap: 5px; }
+.demo-bad-text { font-size: 12px; color: rgba(255,255,255,0.35); font-style: italic; line-height: 1.5; }
+.demo-good {
+  background: rgba(0,212,200,0.05); border: 1px solid rgba(0,212,200,0.15);
+  border-radius: 9px; padding: 14px 16px;
+}
+.demo-good-label { font-size: 9px; font-weight: 700; color: var(--teal); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 5px; }
+.demo-good-text { font-size: 13px; color: var(--white); line-height: 1.55; }
+.demo-discipline-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+.demo-tag { font-size: 9px; font-weight: 700; color: var(--teal); background: rgba(0,212,200,0.08); border: 1px solid rgba(0,212,200,0.15); padding: 2px 7px; border-radius: 5px; letter-spacing: 0.5px; }
+
+.demo-send {
+  display: flex; align-items: center; gap: 12px; margin-top: 8px;
+  padding: 12px 14px; background: rgba(200,224,50,0.06);
+  border: 1px solid rgba(200,224,50,0.15); border-radius: 9px;
+}
+.demo-send-btn {
+  background: var(--lime); color: #0a0f0a; border: none;
+  border-radius: 6px; font-size: 11px; font-weight: 800;
+  padding: 8px 16px; cursor: pointer; white-space: nowrap;
+}
+.demo-send-note { font-size: 11px; color: var(--white-40); line-height: 1.4; }
+
+/* ── SECTION 4: CASCADE ────────────────────────────────── */
+.cascade-top { display: flex; justify-content: center; margin-bottom: 0; }
+.cascade-node {
+  background: var(--navy-card); border: 1px solid rgba(200,224,50,0.2);
+  border-top: 2px solid var(--lime); border-radius: 12px; padding: 14px 28px;
+  display: inline-flex; align-items: center; gap: 14px; position: relative;
+}
+.cascade-node-glow {
+  position: absolute; inset: 0; border-radius: 12px;
+  background: radial-gradient(ellipse at 50% 140%, rgba(200,224,50,0.06) 0%, transparent 70%);
+  animation: soft-pulse 3s ease-in-out infinite;
+}
+@keyframes soft-pulse { 0%,100%{opacity:.5} 50%{opacity:1} }
+.cascade-node-icon { width:34px;height:34px;border-radius:50%;background:rgba(200,224,50,0.08);border:1px solid rgba(200,224,50,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0; }
+.cascade-node-text { position:relative;z-index:1; }
+.cascade-node-label { font-size:14px;font-weight:800;color:var(--white); }
+.cascade-node-sub { font-size:11px;color:rgba(255,255,255,0.32);font-style:italic; }
+.cascade-node-check { display:flex;align-items:center;gap:4px;font-size:10px;font-weight:700;color:var(--green);background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.18);padding:3px 8px;border-radius:20px;position:relative;z-index:1; }
+
+.cascade-connector { width:100%;height:80px;position:relative;overflow:visible;margin:-4px 0; }
+.cascade-connector svg { width:100%;height:100%;display:block;overflow:visible; }
+
+.cascade-panels { display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px; }
+.cascade-panel {
+  background:var(--navy-card);border:1px solid var(--border);
+  border-top:2px solid var(--teal);border-radius:12px;padding:18px 16px;
+}
+.cascade-panel-top { display:flex;justify-content:space-between;align-items:center;margin-bottom:8px; }
+.cascade-panel-num { font-size:10px;font-weight:800;color:var(--white-20);letter-spacing:1px; }
+.cascade-panel-title { font-size:13px;font-weight:800;color:var(--white);margin-bottom:10px;letter-spacing:-0.2px; }
+
+.crm-mini { background:#060d15;border-radius:7px;border:1px solid rgba(0,212,200,0.07); }
+.crm-row { display:flex;gap:6px;padding:6px 10px;align-items:flex-start; }
+.crm-key { font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--teal);min-width:50px;flex-shrink:0;padding-top:1px; }
+.crm-val { font-size:10.5px;color:rgba(255,255,255,0.7);line-height:1.35; }
+.crm-sep { height:1px;background:var(--white-04);margin:0 10px; }
+.crm-hl { color:var(--lime); }
+
+.deal-score-wrap { background:#060d15;border-radius:7px;border:1px solid rgba(167,139,250,0.1);padding:12px; }
+.deal-score-label { font-size:9px;font-weight:700;color:var(--purple);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px; }
+.deal-score-val { font-size:32px;font-weight:900;color:var(--white);letter-spacing:-1px;line-height:1; }
+.deal-score-unit { font-size:14px;color:var(--purple); }
+.deal-score-bar { height:4px;background:rgba(255,255,255,0.07);border-radius:2px;margin-top:8px;overflow:hidden; }
+.deal-score-fill { height:100%;width:78%;background:linear-gradient(90deg,var(--purple),var(--teal));border-radius:2px; }
+.deal-score-status { font-size:10px;color:var(--white-40);margin-top:6px; }
+.deal-score-signals { display:flex;flex-direction:column;gap:4px;margin-top:8px; }
+.deal-signal { font-size:9.5px;color:rgba(255,255,255,0.35);display:flex;align-items:center;gap:5px; }
+.deal-signal .dot { width:4px;height:4px;border-radius:50%;background:var(--teal);flex-shrink:0; }
+
+.queue-mini { background:#060d15;border-radius:7px;border:1px solid rgba(200,224,50,0.08);padding:10px 12px; }
+.queue-header { display:flex;align-items:center;gap:7px;margin-bottom:7px; }
+.queue-avatar { width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,var(--teal),#0a7af4);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--white);flex-shrink:0; }
+.queue-name { font-size:11px;font-weight:700;color:var(--white); }
+.queue-type { font-size:9px;color:var(--white-40); }
+.queue-due { margin-left:auto;font-size:9px;font-weight:700;color:var(--lime);background:rgba(200,224,50,0.1);border:1px solid rgba(200,224,50,0.2);padding:2px 6px;border-radius:8px; }
+.queue-preview { font-size:10px;color:var(--white-40);font-style:italic;line-height:1.4;padding:6px 8px;background:rgba(255,255,255,0.03);border-radius:5px;border-left:2px solid rgba(0,212,200,0.2);margin-bottom:7px; }
+.queue-send { background:var(--lime);color:#0a0f0a;border:none;border-radius:5px;font-size:9px;font-weight:800;padding:5px 10px;cursor:pointer;width:100%; }
+
+.telem-mini { background:#060d15;border-radius:7px;border:1px solid rgba(167,139,250,0.08);padding:10px 12px; }
+.telem-row { display:flex;align-items:center;justify-content:space-between;padding:5px 0; }
+.telem-key { font-size:9.5px;color:var(--white-40); }
+.telem-val { font-size:9.5px;font-weight:700;color:var(--white-60); }
+.telem-sep { height:1px;background:var(--white-04); }
+.telem-event { margin-top:8px;padding:6px 8px;background:rgba(167,139,250,0.06);border-radius:5px;border-left:2px solid rgba(167,139,250,0.3);font-size:9px;color:var(--purple); }
+
+/* ── SECTION 5: ENGINE SYSTEM ──────────────────────────── */
+.engines-intro { max-width:600px;margin-bottom:56px; }
+.engines-grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px; }
+.engine-card {
+  background:var(--navy-card);border:1px solid var(--border);border-radius:14px;
+  padding:24px 22px;position:relative;overflow:hidden;
+  transition:border-color 0.2s,transform 0.2s;
+}
+.engine-card:hover { border-color:rgba(0,212,200,0.25);transform:translateY(-2px); }
+.engine-card::before { content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--teal); }
+.engine-num { font-size:11px;font-weight:800;color:var(--white-20);letter-spacing:1.5px;margin-bottom:14px; }
+.engine-icon-wrap { width:40px;height:40px;border-radius:10px;background:rgba(0,212,200,0.08);border:1px solid rgba(0,212,200,0.15);display:flex;align-items:center;justify-content:center;margin-bottom:14px; }
+.engine-name { font-size:17px;font-weight:800;color:var(--white);letter-spacing:-0.3px;margin-bottom:8px; }
+.engine-trigger { font-size:10px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px; }
+.engine-desc { font-size:13px;color:var(--white-40);line-height:1.6; }
+.engine-example { margin-top:14px;padding:10px 12px;background:rgba(0,212,200,0.04);border-radius:7px;border-left:2px solid rgba(0,212,200,0.2); }
+.engine-example-label { font-size:8.5px;font-weight:700;color:var(--teal);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px; }
+.engine-example-text { font-size:11px;color:var(--white-60);line-height:1.45; }
+
+/* ── SECTION 6: MANAGER INTELLIGENCE ──────────────────── */
+.intel-grid { display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start; }
+.intel-left { display:flex;flex-direction:column;gap:20px; }
+.intel-right { display:flex;flex-direction:column;gap:20px; }
+
+.pipeline-card {
+  background:var(--navy-card);border:1px solid var(--border);border-radius:14px;padding:24px;
+}
+.pipeline-card-title { font-size:12px;font-weight:700;color:var(--white-40);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:20px; }
+.deal-row {
+  display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:9px;margin-bottom:8px;
+}
+.deal-row.healthy { background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.12); }
+.deal-row.at-risk { background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.12); }
+.deal-row.critical { background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.12); }
+.deal-row-name { flex:1;font-size:12px;font-weight:700;color:var(--white); }
+.deal-row-status { font-size:9px;font-weight:700;padding:2px 7px;border-radius:8px; }
+.healthy .deal-row-status { color:var(--green);background:rgba(34,197,94,0.1); }
+.at-risk .deal-row-status { color:#fbbf24;background:rgba(251,191,36,0.1); }
+.critical .deal-row-status { color:#f87171;background:rgba(239,68,68,0.1); }
+.deal-row-score { font-size:18px;font-weight:900;color:var(--white);letter-spacing:-0.5px;min-width:36px;text-align:right; }
+.deal-row-signals { font-size:9px;color:var(--white-20);display:flex;flex-wrap:wrap;gap:3px; }
+
+.autopsy-card {
+  background:var(--navy-card);border:1px solid rgba(239,68,68,0.12);border-radius:14px;
+  border-top:2px solid rgba(239,68,68,0.3);padding:24px;
+}
+.autopsy-title { font-size:12px;font-weight:700;color:#f87171;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px; }
+.autopsy-deal { font-size:15px;font-weight:800;color:var(--white);margin-bottom:16px; }
+.autopsy-timeline { display:flex;flex-direction:column;gap:0; }
+.autopsy-event { display:flex;gap:12px;padding-bottom:14px;position:relative; }
+.autopsy-event::before { content:'';position:absolute;left:5px;top:14px;bottom:0;width:1px;background:var(--border); }
+.autopsy-event:last-child::before { display:none; }
+.autopsy-event:last-child { padding-bottom:0; }
+.autopsy-dot { width:12px;height:12px;border-radius:50%;border:2px solid;flex-shrink:0;margin-top:2px; }
+.autopsy-dot.ok { border-color:var(--green);background:rgba(34,197,94,0.15); }
+.autopsy-dot.warn { border-color:#fbbf24;background:rgba(251,191,36,0.15); }
+.autopsy-dot.fail { border-color:#f87171;background:rgba(239,68,68,0.15); }
+.autopsy-time { font-size:9.5px;color:var(--white-20);min-width:60px; }
+.autopsy-text { font-size:12px;color:var(--white-60);line-height:1.4; }
+.autopsy-failure { color:#f87171;font-weight:700; }
+.autopsy-root { margin-top:14px;padding:10px 12px;background:rgba(239,68,68,0.06);border-radius:7px;border-left:2px solid rgba(239,68,68,0.3); }
+.autopsy-root-label { font-size:8.5px;font-weight:700;color:#f87171;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px; }
+.autopsy-root-text { font-size:11px;color:var(--white-60); }
+
+.benchmark-card {
+  background:var(--navy-card);border:1px solid var(--border);border-radius:14px;padding:24px;
+}
+.benchmark-title { font-size:12px;font-weight:700;color:var(--white-40);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:20px; }
+.benchmark-row { margin-bottom:16px; }
+.benchmark-label { font-size:11px;color:var(--white-60);margin-bottom:6px;display:flex;justify-content:space-between; }
+.benchmark-label span { font-size:10px;color:var(--teal);font-weight:700; }
+.benchmark-bar-wrap { height:6px;background:rgba(255,255,255,0.07);border-radius:3px;position:relative;overflow:visible; }
+.benchmark-bar { height:100%;border-radius:3px;position:relative; }
+.benchmark-bar.your { background:var(--teal); }
+.benchmark-bar.avg { background:rgba(255,255,255,0.2); }
+.benchmark-ticks { display:flex;justify-content:space-between;margin-top:4px;font-size:8.5px;color:var(--white-20); }
+.benchmark-legend { display:flex;gap:14px;margin-top:14px; }
+.benchmark-legend-item { display:flex;align-items:center;gap:5px;font-size:9.5px;color:var(--white-40); }
+.benchmark-legend-dot { width:8px;height:8px;border-radius:50%; }
+.benchmark-network { margin-top:20px;padding:12px 14px;background:rgba(0,212,200,0.04);border:1px solid rgba(0,212,200,0.1);border-radius:8px;font-size:11px;color:var(--white-40);line-height:1.5; }
+.benchmark-network strong { color:var(--teal); }
+
+/* ── SECTION 7: REVENUE RECOVERY ──────────────────────── */
+.revenue-grid { display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center; }
+.revenue-math-card {
+  background:var(--navy-card);border:1px solid var(--border-lime);border-radius:14px;padding:32px;
+}
+.revenue-math-title { font-size:12px;font-weight:700;color:var(--lime);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:24px; }
+.revenue-line { display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--white-04); }
+.revenue-line:last-child { border-bottom:none; }
+.revenue-line-label { font-size:13px;color:var(--white-60); }
+.revenue-line-val { font-size:15px;font-weight:800;color:var(--white); }
+.revenue-line.total { background:rgba(200,224,50,0.04);border-radius:8px;padding:14px 12px;margin-top:8px;border:1px solid rgba(200,224,50,0.12); }
+.revenue-line.total .revenue-line-label { color:var(--lime);font-weight:700; }
+.revenue-line.total .revenue-line-val { color:var(--lime);font-size:22px; }
+.revenue-payback { margin-top:16px;text-align:center;font-size:12px;color:var(--white-40);padding-top:16px;border-top:1px solid var(--white-04); }
+.revenue-payback strong { color:var(--lime); }
+
+/* ── SECTION 8: PROOF ──────────────────────────────────── */
+.proof-grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:48px; }
+.proof-stat {
+  background:var(--navy-card);border:1px solid var(--border);border-radius:12px;padding:24px 20px;text-align:center;
+}
+.proof-stat-val { font-size:42px;font-weight:900;letter-spacing:-2px;color:var(--white);line-height:1; }
+.proof-stat-unit { font-size:18px;color:var(--teal);font-weight:700; }
+.proof-stat-label { font-size:11px;color:var(--white-40);margin-top:6px;text-transform:uppercase;letter-spacing:0.8px;font-weight:600; }
+.proof-stat-delta { font-size:11px;color:var(--green);font-weight:700;margin-top:4px; }
+
+.proof-audit {
+  padding:32px 36px;background:rgba(0,212,200,0.04);border:1px solid rgba(0,212,200,0.12);border-radius:14px;
+  display:flex;align-items:center;gap:28px;flex-wrap:wrap;
+}
+.proof-audit-num { font-size:52px;font-weight:900;letter-spacing:-3px;color:var(--teal);line-height:1;flex-shrink:0; }
+.proof-audit-text h4 { font-size:16px;font-weight:800;color:var(--white);margin-bottom:6px; }
+.proof-audit-text p { font-size:13px;color:var(--white-40);line-height:1.6; }
+
+/* ── SECTION 9: VERTICALS ──────────────────────────────── */
+.verticals-intro { max-width:600px;margin-bottom:48px; }
+.verticals-grid { display:flex;flex-wrap:wrap;gap:12px;margin-bottom:32px; }
+.vertical-pill {
+  display:flex;align-items:center;gap:10px;
+  background:var(--navy-card);border:1px solid var(--border);border-radius:50px;
+  padding:12px 20px;transition:border-color 0.2s,transform 0.2s;cursor:default;
+}
+.vertical-pill:hover { border-color:var(--border-teal);transform:translateY(-1px); }
+.vertical-pill:first-child { border-color:rgba(0,212,200,0.25);background:rgba(0,212,200,0.04); }
+.vertical-dot { width:8px;height:8px;border-radius:50%;background:var(--teal); }
+.vertical-pill:nth-child(n+2) .vertical-dot { background:var(--white-20); }
+.vertical-name { font-size:13px;font-weight:700;color:var(--white); }
+.vertical-status { font-size:9px;font-weight:700;color:var(--teal);padding:2px 6px;border-radius:6px;background:rgba(0,212,200,0.1); }
+.vertical-status.coming { color:var(--white-20);background:var(--white-04); }
+.verticals-note { font-size:13px;color:var(--white-40);line-height:1.6;max-width:560px; }
+
+/* ── SECTION 10: AUDIT CTA ─────────────────────────────── */
+.audit-section {
+  background:linear-gradient(135deg,#060c14 0%,#0a1520 100%);
+  border-top:1px solid var(--border); border-bottom:1px solid var(--border);
+  position:relative;overflow:hidden;
+}
+.audit-section::before {
+  content:''; position:absolute; inset:0;
+  background:radial-gradient(ellipse at 30% 50%,rgba(0,212,200,0.06) 0%,transparent 60%),
+             radial-gradient(ellipse at 70% 50%,rgba(200,224,50,0.04) 0%,transparent 60%);
+  pointer-events:none;
+}
+.audit-inner { position:relative;z-index:1;text-align:center;max-width:700px;margin:0 auto; }
+.audit-eyebrow { display:inline-flex;align-items:center;gap:8px;margin-bottom:24px; }
+.audit-title { font-size:clamp(36px,5vw,60px);font-weight:900;line-height:1.05;letter-spacing:-2px;margin-bottom:20px; }
+.audit-title em { font-style:normal;color:var(--teal); }
+.audit-sub { font-size:16px;color:var(--white-40);line-height:1.65;margin-bottom:40px; }
+.audit-offer {
+  display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;
+  margin:40px 0;text-align:left;
+}
+.audit-offer-item {
+  background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:16px;
+}
+.audit-offer-check { width:20px;height:20px;border-radius:50%;background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);display:flex;align-items:center;justify-content:center;margin-bottom:8px; }
+.audit-offer-label { font-size:12px;font-weight:700;color:var(--white);margin-bottom:3px; }
+.audit-offer-desc { font-size:11px;color:var(--white-40); }
+.audit-ctas { display:flex;justify-content:center;align-items:center;gap:16px;flex-wrap:wrap; }
+.audit-cta-main {
+  background:var(--lime);color:#0a0f0a;border:none;border-radius:12px;
+  font-size:15px;font-weight:800;padding:18px 40px;cursor:pointer;
+  text-decoration:none;display:inline-flex;align-items:center;gap:10px;
+  transition:background 0.15s,transform 0.15s;
+}
+.audit-cta-main:hover { background:#d4ec3c;transform:translateY(-2px); }
+.audit-cta-note { font-size:12px;color:var(--white-40); }
+
+/* ── FAQ ───────────────────────────────────────────────── */
+.faq-list { max-width:720px; }
+.faq-item {
+  border-bottom:1px solid var(--border);
+  overflow:hidden;
+}
+.faq-q {
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:20px 0;cursor:pointer;
+}
+.faq-q-text { font-size:15px;font-weight:700;color:var(--white);line-height:1.35; }
+.faq-icon { width:22px;height:22px;border-radius:50%;background:var(--teal-dim);border:1px solid rgba(0,212,200,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform 0.25s; }
+.faq-icon svg { transition:transform 0.25s; }
+.faq-item.open .faq-icon svg { transform:rotate(45deg); }
+.faq-a { font-size:14px;color:var(--white-40);line-height:1.7;max-height:0;overflow:hidden;transition:max-height 0.35s ease,padding-bottom 0.25s; }
+.faq-item.open .faq-a { max-height:300px;padding-bottom:20px; }
+
+/* ── FOOTER ────────────────────────────────────────────── */
+footer {
+  padding:48px 0 36px;
+  border-top:1px solid var(--border);
+}
+.footer-inner { display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:20px; }
+.footer-logo { font-size:16px;font-weight:900;color:var(--white); }
+.footer-logo span { color:var(--teal); }
+.footer-info { font-size:12px;color:var(--white-20); }
+.footer-links { display:flex;gap:24px; }
+.footer-links a { font-size:12px;color:var(--white-40);text-decoration:none; }
+.footer-links a:hover { color:var(--white); }
+
+/* ── RESPONSIVE ────────────────────────────────────────── */
+@media(max-width:900px){
+  .demo-wrap,.revenue-grid,.intel-grid { grid-template-columns:1fr; }
+  .cascade-panels { grid-template-columns:1fr 1fr; }
+  .hero-metric-divider { display:none; }
+  .hero-metrics { gap:20px; }
+  .hero-metric { flex:0 0 45%; }
+  .audit-offer { grid-template-columns:1fr; }
+}
+@media(max-width:600px){
+  .nav-links { display:none; }
+  .cascade-panels { grid-template-columns:1fr; }
+  .engines-grid { grid-template-columns:1fr; }
+  .proof-grid { grid-template-columns:1fr 1fr; }
+  .hero-metric { flex:0 0 100%; }
+  .section { padding:72px 0; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">YENES <span>·</span> Oper8er</a>
+    <div class="nav-links">
+      <a href="#product">Product</a>
+      <a href="#engines">Engines</a>
+      <a href="#intelligence">Intelligence</a>
+      <a href="#pricing">Pricing</a>
+    </div>
+    <a href="#audit" class="nav-cta">Start Your Free Audit →</a>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════
+     SECTION 1 — HERO
+═══════════════════════════════════════════════════════ -->
+<section class="hero section" id="product">
+  <div class="container">
+    <div class="reveal">
+      <div class="hero-eyebrow">
+        <span class="hero-eyebrow-dot"></span>
+        Sales Execution Infrastructure
+      </div>
+    </div>
+    <div class="reveal reveal-d1">
+      <h1 class="hero-headline">
+        Your leads are<br>
+        paid for.<br>
+        <em>Stop losing them<br>to execution failure.</em>
+      </h1>
+    </div>
+    <div class="reveal reveal-d2">
+      <p class="hero-sub">
+        Oper8er sits between your CRM and your sales team — enforcing response speed, follow-up cadence, objection discipline, and CRM structure across every interaction. Not an AI tool. Execution infrastructure.
+      </p>
+    </div>
+    <div class="reveal reveal-d3">
+      <div class="hero-ctas">
+        <a href="#audit" class="cta-primary">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 1v14M1 8h14" stroke="#0a0f0a" stroke-width="2.5" stroke-linecap="round"/></svg>
+          Start Your Free 30-Day Audit
+        </a>
+        <a href="#product" class="cta-secondary">
+          See how it works
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>
+    </div>
+    <div class="hero-metrics reveal reveal-d4">
+      <div class="hero-metric">
+        <div class="hero-metric-val">58<span>sec</span></div>
+        <div class="hero-metric-label">Avg First Response</div>
+        <div class="hero-metric-delta">↓ from 4.2 hours</div>
+      </div>
+      <div class="hero-metric-divider"></div>
+      <div class="hero-metric">
+        <div class="hero-metric-val">82<span>%</span></div>
+        <div class="hero-metric-label">Follow-Up Compliance</div>
+        <div class="hero-metric-delta">↑ from 35%</div>
+      </div>
+      <div class="hero-metric-divider"></div>
+      <div class="hero-metric">
+        <div class="hero-metric-val">100<span>%</span></div>
+        <div class="hero-metric-label">CRM Notes Structured</div>
+        <div class="hero-metric-delta">↑ from 40%</div>
+      </div>
+      <div class="hero-metric-divider"></div>
+      <div class="hero-metric">
+        <div class="hero-metric-val">1,126</div>
+        <div class="hero-metric-label">Interactions Audited</div>
+        <div class="hero-metric-delta">30-day live deployment</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SECTION 2 — EXECUTION PROBLEM
+═══════════════════════════════════════════════════════ -->
+<section class="section section-dark">
+  <div class="container">
+    <div class="problem-intro reveal">
+      <div class="label">The Execution Gap</div>
+      <h2 class="section-title">Your process is designed right.<br>Your execution isn't.</h2>
+      <p class="section-sub">Revenue teams fail not because of bad reps or bad leads — but because no system enforces execution discipline at scale. The failures are structural. They repeat every day, invisibly.</p>
+    </div>
+    <div class="problem-grid">
+      <div class="problem-card reveal">
+        <div class="problem-num">01</div>
+        <div class="problem-title">Slow Response</div>
+        <div class="problem-desc">Leads arrive and reps respond hours later. Every hour of delay is conversion potential handed to a competitor. Most teams average 4+ hours. The threshold is 5 minutes.</div>
+        <div class="problem-signal">⚠ Industry average: 4.2 hours</div>
+      </div>
+      <div class="problem-card reveal reveal-d1">
+        <div class="problem-num">02</div>
+        <div class="problem-title">Inconsistent Follow-Up</div>
+        <div class="problem-desc">Reps follow up when they remember. Follow-up compliance in most organizations runs 30–50%. The other half of your pipeline is silently decaying — leads that expressed interest and were never re-engaged.</div>
+        <div class="problem-signal">⚠ Avg compliance: ~35%</div>
+      </div>
+      <div class="problem-card reveal reveal-d2">
+        <div class="problem-num">03</div>
+        <div class="problem-title">Poor Objection Handling</div>
+        <div class="problem-desc">Price objection arrives. Rep defaults to discounting or conceding. The correct behavior — redirecting to appointment, reframing value — requires real-time structured guidance that doesn't exist.</div>
+        <div class="problem-signal">⚠ Gross eroded on every concession</div>
+      </div>
+      <div class="problem-card reveal reveal-d1">
+        <div class="problem-num">04</div>
+        <div class="problem-title">Unusable CRM Data</div>
+        <div class="problem-desc">Reps log "customer seemed interested, will follow up." Managers can't determine deal health, identify failure patterns, or coach effectively. The data exists but communicates nothing.</div>
+        <div class="problem-signal">⚠ 40% structured notes before Oper8er</div>
+      </div>
+      <div class="problem-card critical reveal reveal-d2">
+        <div class="problem-num">05</div>
+        <div class="problem-title">Invisible Deal Death</div>
+        <div class="problem-desc">When deals die, the reported reason is always surface-level: "customer decided to wait." The actual execution failure — response delay, missed follow-up, mishandled objection — is invisible. The pattern repeats indefinitely.</div>
+        <div class="problem-signal">⚠ Root cause never identified</div>
+      </div>
+    </div>
+    <div class="problem-root reveal">
+      <div class="problem-root-icon">
+        <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M10 2v16M2 10h16" stroke="#c8e032" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+      <div>
+        <div class="problem-root-title">The Root Cause</div>
+        <div class="problem-root-desc">Managers can design sales processes. They cannot enforce those processes across every interaction, every rep, every lead, every day. Human discipline is the bottleneck. It is unreliable, unscalable, and invisible when it fails. Oper8er replaces it with structural enforcement.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SECTION 3 — ENGINE DEMO
+═══════════════════════════════════════════════════════ -->
+<section class="section">
+  <div class="container">
+    <div class="reveal" style="margin-bottom:48px;">
+      <div class="label">Execution in Action</div>
+      <h2 class="section-title">The system identifies the context.<br>Activates the right engine.</h2>
+      <p class="section-sub">Oper8er doesn't generate generic AI replies. It analyzes inbound communication, detects the execution context, and activates the correct specialized engine. One message. Precise response.</p>
+    </div>
+    <div class="demo-wrap">
+      <div class="demo-left">
+        <!-- Inbound -->
+        <div class="demo-message-card reveal">
+          <div class="demo-message-label">Inbound Message</div>
+          <div class="demo-message-bubble">"This isn't really a priority right now. We're happy with how things are going."</div>
+          <div class="demo-message-meta">
+            <span>Sarah Chen · Lead #4,281</span>
+            <span>Received 2:14pm</span>
+          </div>
+        </div>
+        <!-- Detection -->
+        <div class="demo-detection reveal reveal-d1">
+          <div class="demo-detection-title">Intent Detection</div>
+          <div class="demo-signals">
+            <div class="demo-signal-row"><span class="demo-signal-name">Priority Objection</span><span class="demo-signal-val sig-detected">DETECTED</span></div>
+            <div class="demo-signal-row"><span class="demo-signal-name">Stalling Language</span><span class="demo-signal-val sig-detected">DETECTED</span></div>
+            <div class="demo-signal-row"><span class="demo-signal-name">Price Signal</span><span class="demo-signal-val sig-clear">ABSENT</span></div>
+            <div class="demo-signal-row"><span class="demo-signal-name">Scheduling Readiness</span><span class="demo-signal-val sig-med">LOW</span></div>
+            <div class="demo-signal-row"><span class="demo-signal-name">Conversation Stage</span><span class="demo-signal-val sig-detected">OBJECTION PHASE</span></div>
+          </div>
+        </div>
+        <!-- Engine Selection -->
+        <div class="demo-engine reveal reveal-d2">
+          <div class="demo-engine-title">Engine Selection</div>
+          <div class="demo-engine-active">
+            <div class="demo-engine-icon">
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M10 2L3 7v11h14V7L10 2z" stroke="#c8e032" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 18v-6h4v6" stroke="#c8e032" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </div>
+            <div>
+              <div class="demo-engine-name">Objection Engine</div>
+              <div class="demo-engine-desc">Activated · Priority objection redirect protocol</div>
+            </div>
+            <span class="badge badge-lime" style="margin-left:auto">ACTIVE</span>
+          </div>
+          <div class="demo-engine-inactive">
+            <span class="demo-engine-pill">Appointment Engine</span>
+            <span class="demo-engine-pill">Follow-Up Engine</span>
+            <span class="demo-engine-pill">Qualification Engine</span>
+            <span class="demo-engine-pill">Recovery Engine</span>
+          </div>
+        </div>
+      </div>
+      <div class="demo-right">
+        <div class="demo-response reveal reveal-d1">
+          <div class="demo-response-title">Response Guidance</div>
+          <div class="demo-bad">
+            <div class="demo-bad-label">
+              <svg width="10" height="10" viewBox="0 0 12 12"><circle cx="6" cy="6" r="5" fill="rgba(239,68,68,0.2)"/><path d="M4 4l4 4M8 4l-4 4" stroke="#f87171" stroke-width="1.2" stroke-linecap="round"/></svg>
+              Without Oper8er
+            </div>
+            <div class="demo-bad-text">"No problem, reach out whenever you're ready! Happy to help when the timing is right."</div>
+          </div>
+          <div class="demo-good">
+            <div class="demo-good-label">
+              <svg width="10" height="10" viewBox="0 0 12 12"><circle cx="6" cy="6" r="5" fill="rgba(0,212,200,0.2)"/><path d="M3 6l2 2 4-4" stroke="#00d4c8" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Objection Engine Response
+            </div>
+            <div class="demo-good-text">
+              "Totally fair. Most teams think that until they see how many conversations die after the first reply because no one follows up consistently. If we could show you that pattern in 10 minutes Monday, would it be worth a quick look?"
+            </div>
+            <div class="demo-discipline-tags">
+              <span class="demo-tag">No Concession</span>
+              <span class="demo-tag">Pattern Proof</span>
+              <span class="demo-tag">Binary Ask</span>
+              <span class="demo-tag">Appointment Redirect</span>
+            </div>
+          </div>
+        </div>
+        <div class="demo-send reveal reveal-d2">
+          <div>
+            <div class="demo-send-note">Rep reviews the guided response. Adjusts if needed. One click sends — and three automatic actions trigger immediately.</div>
+          </div>
+          <button class="demo-send-btn">Review &amp; Send →</button>
+        </div>
+        <!-- What happens -->
+        <div class="demo-message-card reveal reveal-d3" style="border-top:2px solid rgba(0,212,200,0.3);">
+          <div class="demo-message-label" style="color:var(--teal)">What Happens When You Send</div>
+          <div style="display:flex;flex-direction:column;gap:7px;margin-top:4px;">
+            <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:rgba(255,255,255,0.6);">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" fill="rgba(0,212,200,0.1)"/><path d="M5 8l2 2 4-4" stroke="#00d4c8" stroke-width="1.2" stroke-linecap="round"/></svg>
+              CRM note automatically structured and logged
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:rgba(255,255,255,0.6);">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" fill="rgba(0,212,200,0.1)"/><path d="M5 8l2 2 4-4" stroke="#00d4c8" stroke-width="1.2" stroke-linecap="round"/></svg>
+              Deal Momentum Score updated
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:rgba(255,255,255,0.6);">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" fill="rgba(0,212,200,0.1)"/><path d="M5 8l2 2 4-4" stroke="#00d4c8" stroke-width="1.2" stroke-linecap="round"/></svg>
+              24hr follow-up queued automatically
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:rgba(255,255,255,0.6);">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" fill="rgba(0,212,200,0.1)"/><path d="M5 8l2 2 4-4" stroke="#00d4c8" stroke-width="1.2" stroke-linecap="round"/></svg>
+              Execution telemetry event recorded
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SECTION 4 — AUTOMATION CASCADE
+═══════════════════════════════════════════════════════ -->
+<section class="section section-alt">
+  <div class="container">
+    <div style="text-align:center;margin-bottom:48px;" class="reveal">
+      <div class="label" style="justify-content:center;">Automation Cascade</div>
+      <h2 class="section-title" style="text-align:center;">One action.<br>Four operational outputs.</h2>
+      <p class="section-sub" style="margin:0 auto;text-align:center;">The rep sends one response. Oper8er handles everything that follows — without additional input from anyone.</p>
+    </div>
+    <!-- Top node -->
+    <div class="cascade-top reveal">
+      <div class="cascade-node">
+        <div class="cascade-node-glow"></div>
+        <div class="cascade-node-icon">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M19 1L9 11" stroke="#c8e032" stroke-width="2" stroke-linecap="round"/><path d="M19 1L13 19L9 11L1 7L19 1Z" stroke="#c8e032" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="cascade-node-text">
+          <div class="cascade-node-label">Response Sent</div>
+          <div class="cascade-node-sub">Rep reviewed and confirmed · 2:16pm</div>
+        </div>
+        <div class="cascade-node-check">
+          <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" fill="rgba(34,197,94,0.15)" stroke="#22c55e" stroke-width="1.2"/><path d="M3.5 6l2 2 3.5-3.5" stroke="#22c55e" stroke-width="1.3" stroke-linecap="round"/></svg>
+          Delivered
+        </div>
+      </div>
+    </div>
+    <!-- SVG connector -->
+    <div class="cascade-connector" style="margin:0 auto;max-width:1060px;">
+      <svg viewBox="0 0 1000 80" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <line x1="500" y1="0" x2="500" y2="30" stroke="rgba(0,212,200,0.4)" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <line x1="125" y1="30" x2="875" y2="30" stroke="rgba(0,212,200,0.25)" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <line x1="125" y1="30" x2="125" y2="80" stroke="rgba(0,212,200,0.25)" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <line x1="375" y1="30" x2="375" y2="80" stroke="rgba(0,212,200,0.25)" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <line x1="625" y1="30" x2="625" y2="80" stroke="rgba(0,212,200,0.25)" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <line x1="875" y1="30" x2="875" y2="80" stroke="rgba(0,212,200,0.25)" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <polygon points="120,76 125,84 130,76" fill="rgba(0,212,200,0.5)"/>
+        <polygon points="370,76 375,84 380,76" fill="rgba(0,212,200,0.5)"/>
+        <polygon points="620,76 625,84 630,76" fill="rgba(0,212,200,0.5)"/>
+        <polygon points="870,76 875,84 880,76" fill="rgba(0,212,200,0.5)"/>
+      </svg>
+    </div>
+    <!-- Four panels -->
+    <div class="cascade-panels" style="max-width:1060px;margin:0 auto;">
+      <!-- CRM Note -->
+      <div class="cascade-panel reveal">
+        <div class="cascade-panel-top">
+          <span style="font-size:9px;font-weight:800;color:rgba(255,255,255,0.2);letter-spacing:1px;">01</span>
+          <span class="badge badge-teal">Auto-Logged</span>
+        </div>
+        <div class="cascade-panel-title">CRM Note Written</div>
+        <div class="crm-mini">
+          <div class="crm-row"><span class="crm-key">Stage</span><span class="crm-val">Lead Response</span></div>
+          <div class="crm-sep"></div>
+          <div class="crm-row"><span class="crm-key">Trigger</span><span class="crm-val">Priority objection</span></div>
+          <div class="crm-sep"></div>
+          <div class="crm-row"><span class="crm-key">Position</span><span class="crm-val">Redirected to Monday appt ask</span></div>
+          <div class="crm-sep"></div>
+          <div class="crm-row"><span class="crm-key">Next</span><span class="crm-val">Follow up 24hr if no reply</span></div>
+          <div class="crm-sep"></div>
+          <div class="crm-row"><span class="crm-key">When</span><span class="crm-val crm-hl">Today 2:16pm → Mon 10am</span></div>
+        </div>
+      </div>
+      <!-- Deal Score -->
+      <div class="cascade-panel reveal reveal-d1">
+        <div class="cascade-panel-top">
+          <span style="font-size:9px;font-weight:800;color:rgba(255,255,255,0.2);letter-spacing:1px;">02</span>
+          <span class="badge badge-purple">Updated</span>
+        </div>
+        <div class="cascade-panel-title">Deal Score Updated</div>
+        <div class="deal-score-wrap">
+          <div class="deal-score-label">Deal Momentum Score</div>
+          <div class="deal-score-val">78<span class="deal-score-unit">/100</span></div>
+          <div class="deal-score-bar"><div class="deal-score-fill"></div></div>
+          <div class="deal-score-status">Status: <strong style="color:#fbbf24;">At Risk → Recovering</strong></div>
+          <div class="deal-score-signals">
+            <div class="deal-signal"><span class="dot"></span>Objection handled — redirect executed</div>
+            <div class="deal-signal"><span class="dot" style="background:#fbbf24;"></span>Appointment not yet confirmed</div>
+            <div class="deal-signal"><span class="dot"></span>Response time: 2 min (strong)</div>
+          </div>
+        </div>
+      </div>
+      <!-- Follow-Up -->
+      <div class="cascade-panel reveal reveal-d2">
+        <div class="cascade-panel-top">
+          <span style="font-size:9px;font-weight:800;color:rgba(255,255,255,0.2);letter-spacing:1px;">03</span>
+          <span class="badge badge-lime">Queued</span>
+        </div>
+        <div class="cascade-panel-title">Follow-Up Scheduled</div>
+        <div class="queue-mini">
+          <div class="queue-header">
+            <div class="queue-avatar">S</div>
+            <div style="flex:1">
+              <div class="queue-name">Sarah Chen</div>
+              <div class="queue-type">Tier 1 Follow-Up</div>
+            </div>
+            <div class="queue-due">24hr</div>
+          </div>
+          <div class="queue-preview">"Following up on our Monday conversation — just wanted to confirm we're still on..."</div>
+          <button class="queue-send">Review &amp; Send Tomorrow</button>
+        </div>
+        <div style="margin-top:8px;padding:7px 10px;background:rgba(255,255,255,0.03);border-radius:6px;font-size:9.5px;color:rgba(255,255,255,0.25);">Tier 2 (48hr) · Tier 3 (5-day) · Tier 4 (7-day) auto-queued</div>
+      </div>
+      <!-- Telemetry -->
+      <div class="cascade-panel reveal reveal-d3">
+        <div class="cascade-panel-top">
+          <span style="font-size:9px;font-weight:800;color:rgba(255,255,255,0.2);letter-spacing:1px;">04</span>
+          <span class="badge badge-purple">Recorded</span>
+        </div>
+        <div class="cascade-panel-title">Telemetry Event</div>
+        <div class="telem-mini">
+          <div class="telem-row"><span class="telem-key">Response Time</span><span class="telem-val">2m 04s</span></div>
+          <div class="telem-sep"></div>
+          <div class="telem-row"><span class="telem-key">Engine Used</span><span class="telem-val">Objection</span></div>
+          <div class="telem-sep"></div>
+          <div class="telem-row"><span class="telem-key">Objection Type</span><span class="telem-val">Priority</span></div>
+          <div class="telem-sep"></div>
+          <div class="telem-row"><span class="telem-key">Handling Method</span><span class="telem-val">Redirect + Binary Ask</span></div>
+          <div class="telem-sep"></div>
+          <div class="telem-row"><span class="telem-key">Outcome</span><span class="telem-val" style="color:#fbbf24;">Pending</span></div>
+          <div class="telem-event">Event #4,281-OBJ recorded · Feeds intelligence layer</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SECTION 5 — ENGINE SYSTEM
+═══════════════════════════════════════════════════════ -->
+<section class="section" id="engines">
+  <div class="container">
+    <div class="engines-intro reveal">
+      <div class="label">Engine System</div>
+      <h2 class="section-title">Not one AI model.<br>Five specialized engines.</h2>
+      <p class="section-sub">Oper8er analyzes every inbound message and activates the correct execution engine based on detected context. Each engine is a specialized protocol — not a general-purpose AI reply generator.</p>
+    </div>
+    <div class="engines-grid">
+      <div class="engine-card reveal">
+        <div class="engine-num">ENGINE 01</div>
+        <div class="engine-icon-wrap">
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><rect x="3" y="3" width="14" height="14" rx="2" stroke="#00d4c8" stroke-width="1.5"/><path d="M7 10h6M10 7v6" stroke="#00d4c8" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <div class="engine-name">Appointment Engine</div>
+        <div class="engine-trigger">Activated by: Scheduling signals</div>
+        <div class="engine-desc">Converts vague scheduling interest into confirmed commitments. Detects "maybe this weekend" and applies binary scheduling prompts that produce actual appointments, not open-ended maybes.</div>
+        <div class="engine-example">
+          <div class="engine-example-label">Signal Detected</div>
+          <div class="engine-example-text">"I'll try to come by sometime this week" → Engine converts to: "Saturday at 10 or Sunday at 1 — which works better?"</div>
+        </div>
+      </div>
+      <div class="engine-card reveal reveal-d1">
+        <div class="engine-num">ENGINE 02</div>
+        <div class="engine-icon-wrap">
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M10 2L3 7v11h14V7L10 2z" stroke="#00d4c8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 18v-6h4v6" stroke="#00d4c8" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <div class="engine-name">Objection Engine</div>
+        <div class="engine-trigger">Activated by: Friction signals</div>
+        <div class="engine-desc">Detects price objections, hesitation, and stalling language. Surfaces structured responses that redirect to appointment scheduling rather than entering price negotiation. No discounts volunteered.</div>
+        <div class="engine-example">
+          <div class="engine-example-label">Signal Detected</div>
+          <div class="engine-example-text">"Price is too high" → Redirect to appointment with value reframe — not a discount offer.</div>
+        </div>
+      </div>
+      <div class="engine-card reveal reveal-d2">
+        <div class="engine-num">ENGINE 03</div>
+        <div class="engine-icon-wrap">
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="#00d4c8" stroke-width="1.5"/><path d="M10 6v4l3 2" stroke="#00d4c8" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <div class="engine-name">Follow-Up Engine</div>
+        <div class="engine-trigger">Activated by: Lead silence</div>
+        <div class="engine-desc">Generates and queues escalating follow-up sequences when leads go silent. 4-tier cadence: Day 2 Tier 1, Day 3 Tier 2, Day 6 Tier 3, Day 8 scarcity. Zero manual scheduling required.</div>
+        <div class="engine-example">
+          <div class="engine-example-label">Escalation Path</div>
+          <div class="engine-example-text">No response in 24hr → Tier 1 queued. Still silent → Tier 2. Day 8: "Had 2 other inquiries on this vehicle this week."</div>
+        </div>
+      </div>
+      <div class="engine-card reveal reveal-d1">
+        <div class="engine-num">ENGINE 04</div>
+        <div class="engine-icon-wrap">
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="#00d4c8" stroke-width="1.5"/><path d="M10 6v4" stroke="#00d4c8" stroke-width="2" stroke-linecap="round"/><circle cx="10" cy="14" r="1" fill="#00d4c8"/></svg>
+        </div>
+        <div class="engine-name">Qualification Engine</div>
+        <div class="engine-trigger">Activated by: Insufficient context</div>
+        <div class="engine-desc">Detects when buyer intent, timeline, or decision signals are unclear. Guides reps through qualification sequences that surface deal-critical information without interrogating the customer.</div>
+        <div class="engine-example">
+          <div class="engine-example-label">Signal Detected</div>
+          <div class="engine-example-text">Missing: timeline, decision-maker, budget signal → Engine surfaces targeted questions that advance the deal.</div>
+        </div>
+      </div>
+      <div class="engine-card reveal reveal-d2">
+        <div class="engine-num">ENGINE 05</div>
+        <div class="engine-icon-wrap">
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M4 15l4-4 3 3 5-6" stroke="#00d4c8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="engine-name">Lead Recovery Engine</div>
+        <div class="engine-trigger">Activated by: Dormant leads</div>
+        <div class="engine-desc">Re-engages cold leads beyond the standard follow-up cadence using value restatement, new information triggers, and scarcity signals. Recovery outcomes tracked as separate telemetry events.</div>
+        <div class="engine-example">
+          <div class="engine-example-label">Signal Detected</div>
+          <div class="engine-example-text">Lead silent 7+ days, not marked lost → Recovery sequence activated with contextual re-engagement strategy.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SECTION 6 — MANAGER INTELLIGENCE
+═══════════════════════════════════════════════════════ -->
+<section class="section section-dark" id="intelligence">
+  <div class="container">
+    <div style="margin-bottom:56px;" class="reveal">
+      <div class="label">Manager Intelligence Layer</div>
+      <h2 class="section-title">Stop managing by intuition.<br>Manage by execution data.</h2>
+      <p class="section-sub">The Intelligence Layer is built for the person who signs the check. Reps get conversation guidance. Managers get operational visibility, forensic diagnostics, and data-driven performance management.</p>
+    </div>
+    <div class="intel-grid">
+      <div class="intel-left">
+        <!-- Pipeline Dashboard -->
+        <div class="pipeline-card reveal">
+          <div class="pipeline-card-title">Pipeline — Deal Momentum Scores</div>
+          <div class="deal-row healthy">
+            <div>
+              <div class="deal-row-name">Mike Brennan · 2024 F-150</div>
+              <div class="deal-row-signals"><span>Fast response ✓</span><span>Appointment confirmed ✓</span><span>CRM complete ✓</span></div>
+            </div>
+            <span class="deal-row-status">Healthy</span>
+            <div class="deal-row-score">91</div>
+          </div>
+          <div class="deal-row at-risk">
+            <div>
+              <div class="deal-row-name">Sarah Chen · Priority Objection</div>
+              <div class="deal-row-signals"><span>Objection handled ✓</span><span>Appointment pending ⚠</span></div>
+            </div>
+            <span class="deal-row-status">At Risk</span>
+            <div class="deal-row-score">78</div>
+          </div>
+          <div class="deal-row critical">
+            <div>
+              <div class="deal-row-name">David Park · 2023 Explorer</div>
+              <div class="deal-row-signals"><span>Response delay ✗</span><span>No follow-up 48hr ✗</span><span>CRM incomplete ✗</span></div>
+            </div>
+            <span class="deal-row-status">Critical</span>
+            <div class="deal-row-score">31</div>
+          </div>
+          <div class="deal-row at-risk">
+            <div>
+              <div class="deal-row-name">Jessica Torres · Lease Inquiry</div>
+              <div class="deal-row-signals"><span>Follow-up Tier 2 sent ✓</span><span>Payment quote pending ⚠</span></div>
+            </div>
+            <span class="deal-row-status">At Risk</span>
+            <div class="deal-row-score">62</div>
+          </div>
+        </div>
+        <!-- Benchmark -->
+        <div class="benchmark-card reveal reveal-d1">
+          <div class="benchmark-title">Execution Benchmark Network</div>
+          <div class="benchmark-row">
+            <div class="benchmark-label">Response Time <span>Your avg: 2m 04s — Top 10%</span></div>
+            <div class="benchmark-bar-wrap">
+              <div class="benchmark-bar your" style="width:92%"></div>
+            </div>
+            <div class="benchmark-ticks"><span>0</span><span>2 min</span><span>5 min</span><span>10 min</span></div>
+          </div>
+          <div class="benchmark-row">
+            <div class="benchmark-label">Follow-Up Compliance <span>Your rate: 82% — Above avg</span></div>
+            <div class="benchmark-bar-wrap">
+              <div class="benchmark-bar your" style="width:82%"></div>
+            </div>
+            <div class="benchmark-ticks"><span>0%</span><span>35%</span><span>60%</span><span>100%</span></div>
+          </div>
+          <div class="benchmark-legend">
+            <div class="benchmark-legend-item"><div class="benchmark-legend-dot" style="background:var(--teal)"></div>Your Store</div>
+            <div class="benchmark-legend-item"><div class="benchmark-legend-dot" style="background:rgba(255,255,255,0.2)"></div>Market Avg</div>
+            <div class="benchmark-legend-item"><div class="benchmark-legend-dot" style="background:var(--lime)"></div>Top 10%</div>
+          </div>
+          <div class="benchmark-network">
+            <strong>Execution Benchmark Network</strong> — anonymized cross-deployment data. See how your team compares to market. Available as deployment density grows.
+          </div>
+        </div>
+      </div>
+      <div class="intel-right">
+        <!-- Deal Autopsy -->
+        <div class="autopsy-card reveal reveal-d1">
+          <div class="autopsy-title">Deal Autopsy Engine</div>
+          <div class="autopsy-deal">Lost Deal: David Park · 2023 Explorer Inquiry</div>
+          <div class="autopsy-timeline">
+            <div class="autopsy-event">
+              <div class="autopsy-dot ok"></div>
+              <div class="autopsy-time">Day 1 · 9:12am</div>
+              <div class="autopsy-text">Lead arrived via web form. In queue.</div>
+            </div>
+            <div class="autopsy-event">
+              <div class="autopsy-dot warn"></div>
+              <div class="autopsy-time">Day 1 · 1:47pm</div>
+              <div class="autopsy-text"><span class="autopsy-failure">4hr 35min response delay.</span> First contact well outside conversion window.</div>
+            </div>
+            <div class="autopsy-event">
+              <div class="autopsy-dot warn"></div>
+              <div class="autopsy-time">Day 1 · 2:04pm</div>
+              <div class="autopsy-text">Customer asked about pricing. <span class="autopsy-failure">Rep volunteered discount instead of appointment redirect.</span></div>
+            </div>
+            <div class="autopsy-event">
+              <div class="autopsy-dot fail"></div>
+              <div class="autopsy-time">Day 3 · —</div>
+              <div class="autopsy-text"><span class="autopsy-failure">No follow-up sent.</span> 48hr window missed. Lead went cold.</div>
+            </div>
+            <div class="autopsy-event">
+              <div class="autopsy-dot fail"></div>
+              <div class="autopsy-time">Day 9 · —</div>
+              <div class="autopsy-text"><span class="autopsy-failure">Marked lost.</span> Rep reported: "customer decided to wait."</div>
+            </div>
+          </div>
+          <div class="autopsy-root">
+            <div class="autopsy-root-label">Root Cause Identified</div>
+            <div class="autopsy-root-text">Execution failure at 3 points: response delay (4.5hr), objection mishandled (discount offered), follow-up missed (48hr gap). Rep-reported reason masks all three. These patterns repeat.</div>
+          </div>
+        </div>
+        <div style="padding:20px 24px;background:var(--navy-card);border:1px solid var(--border);border-radius:14px;" class="reveal reveal-d2">
+          <div style="font-size:12px;font-weight:700;color:var(--white-40);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:16px;">Organizational Failure Patterns</div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(239,68,68,0.05);border-radius:7px;border:1px solid rgba(239,68,68,0.1);">
+              <span style="font-size:12px;color:rgba(255,255,255,0.6);">Lost deals with no 48hr follow-up</span>
+              <span style="font-size:16px;font-weight:900;color:#f87171;">40%</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(239,68,68,0.05);border-radius:7px;border:1px solid rgba(239,68,68,0.1);">
+              <span style="font-size:12px;color:rgba(255,255,255,0.6);">Died after response delay &gt;4hr</span>
+              <span style="font-size:16px;font-weight:900;color:#f87171;">23%</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(239,68,68,0.05);border-radius:7px;border:1px solid rgba(239,68,68,0.1);">
+              <span style="font-size:12px;color:rgba(255,255,255,0.6);">Died after price objection mishandled</span>
+              <span style="font-size:16px;font-weight:900;color:#f87171;">18%</span>
+            </div>
+          </div>
+          <p style="font-size:11px;color:rgba(255,255,255,0.25);margin-top:14px;font-style:italic;">Management corrects the pattern — not individual deals.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SECTION 7 — REVENUE RECOVERY
+═══════════════════════════════════════════════════════ -->
+<section class="section">
+  <div class="container">
+    <div class="revenue-grid">
+      <div class="reveal">
+        <div class="label">Revenue Recovery</div>
+        <h2 class="section-title">You already paid for these leads.<br>Stop losing them.</h2>
+        <p class="section-sub" style="margin-bottom:24px;">The leads are purchased. The reps are hired. The CRM is running. The investment exists. The execution layer is where value is destroyed — and where Oper8er recovers it.</p>
+        <p class="section-sub" style="font-size:13px;">Oper8er doesn't compete with other software tools. It competes against the cost of a BDC employee ($6,000–$8,000/month), the revenue lost to slow response, and the marketing spend wasted on leads that were generated successfully but lost through execution failure.</p>
+        <div style="margin-top:28px;padding:16px 20px;background:rgba(200,224,50,0.04);border:1px solid rgba(200,224,50,0.12);border-radius:10px;font-size:14px;color:var(--white-60);line-height:1.6;">
+          <strong style="color:var(--lime);">One-deal payback.</strong> Oper8er costs one deal per month. Everything beyond that is your profit.
+        </div>
+      </div>
+      <div class="revenue-math-card reveal reveal-d2">
+        <div class="revenue-math-title">Monthly Revenue Leakage Calculator</div>
+        <div class="revenue-line"><span class="revenue-line-label">Avg gross profit per deal</span><span class="revenue-line-val">$3,500</span></div>
+        <div class="revenue-line"><span class="revenue-line-label">Deals lost to slow response (est.)</span><span class="revenue-line-val">4–6 / mo</span></div>
+        <div class="revenue-line"><span class="revenue-line-label">Deals lost to missed follow-up (est.)</span><span class="revenue-line-val">3–5 / mo</span></div>
+        <div class="revenue-line"><span class="revenue-line-label">Gross erosion from objection mishandling</span><span class="revenue-line-val">$800–$1,200 / deal</span></div>
+        <div class="revenue-line total">
+          <span class="revenue-line-label">Estimated monthly leakage</span>
+          <span class="revenue-line-val">$25k–$47k</span>
+        </div>
+        <div class="revenue-line total" style="margin-top:8px;">
+          <span class="revenue-line-label">Oper8er Pro subscription</span>
+          <span class="revenue-line-val" style="color:var(--lime);">$2,500</span>
+        </div>
+        <div class="revenue-payback">
+          Subscription represents <strong>5–10% of recovered value</strong>.<br>
+          The audit reveals your actual number.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SECTION 8 — PROOF
+═══════════════════════════════════════════════════════ -->
+<section class="section section-dark">
+  <div class="container">
+    <div style="margin-bottom:48px;" class="reveal">
+      <div class="label">Validated Results</div>
+      <h2 class="section-title">Not a concept.<br>A deployed, audited system.</h2>
+      <p class="section-sub">These numbers come from a single 30-day live deployment — 1,126 real interactions, real reps, real leads. Not a demo environment.</p>
+    </div>
+    <div class="proof-grid">
+      <div class="proof-stat reveal">
+        <div class="proof-stat-val">58<span class="proof-stat-unit">sec</span></div>
+        <div class="proof-stat-label">Avg Response Time</div>
+        <div class="proof-stat-delta">↓ from 4.2 hours</div>
+      </div>
+      <div class="proof-stat reveal reveal-d1">
+        <div class="proof-stat-val">82<span class="proof-stat-unit">%</span></div>
+        <div class="proof-stat-label">Follow-Up Compliance</div>
+        <div class="proof-stat-delta">↑ from 35%</div>
+      </div>
+      <div class="proof-stat reveal reveal-d2">
+        <div class="proof-stat-val">100<span class="proof-stat-unit">%</span></div>
+        <div class="proof-stat-label">CRM Notes Structured</div>
+        <div class="proof-stat-delta">↑ from 40%</div>
+      </div>
+      <div class="proof-stat reveal reveal-d3">
+        <div class="proof-stat-val">0</div>
+        <div class="proof-stat-label">Payment Quote Violations</div>
+        <div class="proof-stat-delta">Guardrail system: intact</div>
+      </div>
+    </div>
+    <div class="proof-audit reveal">
+      <div class="proof-audit-num">1,126</div>
+      <div class="proof-audit-text">
+        <h4>30-Day Forensic Audit — Teton Motors, WY</h4>
+        <p>Every interaction analyzed. Response timing, objection handling, follow-up compliance, CRM logging quality — all measured at the behavioral level. Not rep-reported. Not estimated. Observed and recorded by the system across every lead worked during the deployment period.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SECTION 9 — VERTICALS
+═══════════════════════════════════════════════════════ -->
+<section class="section">
+  <div class="container">
+    <div class="verticals-intro reveal">
+      <div class="label">Vertical Deployments</div>
+      <h2 class="section-title">Built for any revenue team<br>that runs on a CRM.</h2>
+      <p class="section-sub">The execution problem isn't unique to automotive. It appears anywhere revenue depends on inbound leads, follow-up sequences, and human sales conversations. Oper8er deploys through industry-specific implementations — same platform, same infrastructure.</p>
+    </div>
+    <div class="verticals-grid reveal reveal-d1">
+      <div class="vertical-pill">
+        <div class="vertical-dot"></div>
+        <span class="vertical-name">Oper8er Automotive</span>
+        <span class="vertical-status">Live</span>
+      </div>
+      <div class="vertical-pill">
+        <div class="vertical-dot"></div>
+        <span class="vertical-name">Oper8er Solar</span>
+        <span class="vertical-status coming">Coming</span>
+      </div>
+      <div class="vertical-pill">
+        <div class="vertical-dot"></div>
+        <span class="vertical-name">Oper8er Insurance</span>
+        <span class="vertical-status coming">Coming</span>
+      </div>
+      <div class="vertical-pill">
+        <div class="vertical-dot"></div>
+        <span class="vertical-name">Oper8er Wealth</span>
+        <span class="vertical-status coming">Coming</span>
+      </div>
+      <div class="vertical-pill">
+        <div class="vertical-dot"></div>
+        <span class="vertical-name">Oper8er Real Estate</span>
+        <span class="vertical-status coming">Coming</span>
+      </div>
+    </div>
+    <p class="verticals-note reveal reveal-d2">Each vertical implementation uses the same four-layer execution stack with industry-specific conversation logic, CRM integrations, and execution rules. The platform is horizontal. The deployments are purpose-built.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SECTION 10 — AUDIT CTA
+═══════════════════════════════════════════════════════ -->
+<section class="section audit-section" id="audit">
+  <div class="container">
+    <div class="audit-inner reveal">
+      <div class="audit-eyebrow">
+        <span class="badge badge-teal">Free · No Commitment</span>
+      </div>
+      <h2 class="audit-title">
+        The <em>30-Day</em><br>Execution Audit.
+      </h2>
+      <p class="audit-sub">
+        Connect your CRM. We observe 30 days of real execution — no behavior changes required from your team. At the end, you get a forensic report showing exactly what your execution data looks like: response times, follow-up compliance, CRM completeness, estimated revenue leakage. The audit is the demo.
+      </p>
+      <div class="audit-offer">
+        <div class="audit-offer-item">
+          <div class="audit-offer-check">
+            <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2.5 6l2.5 2.5L9.5 3" stroke="#22c55e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="audit-offer-label">No Cost</div>
+          <div class="audit-offer-desc">Free for qualified revenue teams</div>
+        </div>
+        <div class="audit-offer-item">
+          <div class="audit-offer-check">
+            <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2.5 6l2.5 2.5L9.5 3" stroke="#22c55e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="audit-offer-label">No Commitment</div>
+          <div class="audit-offer-desc">No obligation to deploy</div>
+        </div>
+        <div class="audit-offer-item">
+          <div class="audit-offer-check">
+            <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2.5 6l2.5 2.5L9.5 3" stroke="#22c55e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="audit-offer-label">No Changes Required</div>
+          <div class="audit-offer-desc">Your team works exactly as normal</div>
+        </div>
+      </div>
+      <div class="audit-ctas">
+        <a href="#" class="audit-cta-main">
+          Start Your Free Audit
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="#0a0f0a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <span class="audit-cta-note">Takes 10 minutes to set up · Results in 30 days</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     FAQ
+═══════════════════════════════════════════════════════ -->
+<section class="section section-alt">
+  <div class="container">
+    <div style="margin-bottom:48px;" class="reveal">
+      <div class="label">Common Questions</div>
+      <h2 class="section-title">Got Questions?</h2>
+    </div>
+    <div class="faq-list reveal">
+      <div class="faq-item">
+        <div class="faq-q">
+          <span class="faq-q-text">How is this different from my CRM's built-in AI features?</span>
+          <div class="faq-icon"><svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M6 2v8M2 6h8" stroke="#00d4c8" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+        </div>
+        <div class="faq-a">Your CRM records what happened. Oper8er enforces how it happens. CRM AI features suggest things — reps still decide whether to act. Oper8er validates every interaction before it goes out, structures every CRM note automatically, and queues every follow-up without rep input. It's the enforcement layer your CRM was never designed to be.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">
+          <span class="faq-q-text">Do my reps need training to use it?</span>
+          <div class="faq-icon"><svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M6 2v8M2 6h8" stroke="#00d4c8" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+        </div>
+        <div class="faq-a">Minimal. Oper8er works with your existing CRM — reps don't change their tools. The system surfaces guidance in the workflow they're already in. Implementation takes approximately 2 weeks, followed by a 2-week calibration period. By week four, execution discipline is running automatically.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">
+          <span class="faq-q-text">What CRM systems does Oper8er integrate with?</span>
+          <div class="faq-icon"><svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M6 2v8M2 6h8" stroke="#00d4c8" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+        </div>
+        <div class="faq-a">Oper8er integrates via API with VinSolutions, DealerSocket, Reynolds & Reynolds, and other major automotive CRM systems. For other verticals: Wealthbox, Salesforce, HubSpot, and Follow Up Boss integrations are in development. If your CRM has an API, we can build to it. The audit process confirms compatibility before any commitment is made.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">
+          <span class="faq-q-text">Is the AI talking to my customers directly?</span>
+          <div class="faq-icon"><svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M6 2v8M2 6h8" stroke="#00d4c8" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+        </div>
+        <div class="faq-a">No. Oper8er is not a chatbot and is not customer-facing. The system guides your reps — it surfaces structured response recommendations, and the rep reviews and sends. You can configure an approval workflow where all outbound messages require rep confirmation before sending. Your team maintains full control of customer relationships.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">
+          <span class="faq-q-text">What happens if a lead wants to talk to a human?</span>
+          <div class="faq-icon"><svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M6 2v8M2 6h8" stroke="#00d4c8" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+        </div>
+        <div class="faq-a">Oper8er routes escalation signals immediately. When a customer requests to speak with someone or shows signals of frustration, the system flags the conversation for immediate human takeover and surfaces it in the rep's queue as a priority. The response guidance for escalation scenarios is specifically designed to facilitate — not delay — human handoff.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">
+          <span class="faq-q-text">What does the 30-Day Execution Audit cost?</span>
+          <div class="faq-icon"><svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M6 2v8M2 6h8" stroke="#00d4c8" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+        </div>
+        <div class="faq-a">Nothing. The audit is free, requires no commitment to deploy, and involves no changes to your team's current workflow. We connect to your CRM, observe 30 days of real execution, and deliver a forensic report showing your actual response times, follow-up compliance rates, CRM structure quality, and estimated revenue leakage. The audit is the demo — you decide what to do with the information.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div>
+        <div class="footer-logo">YENES <span>·</span> Oper8er</div>
+        <div class="footer-info" style="margin-top:6px;">© 2026 YENES — All Rights Reserved · hello@yenes.ai · +1 (307) 690-0291</div>
+        <div class="footer-info" style="margin-top:3px;">Po Box 9114, Jackson, WY 83001</div>
+      </div>
+      <div class="footer-links">
+        <a href="#">Product</a>
+        <a href="#audit">Start Audit</a>
+        <a href="#">Privacy</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- SCROLL REVEAL + FAQ JS -->
+<script>
+(function(){
+  // Reveal
+  var reveals = document.querySelectorAll('.reveal');
+  if('IntersectionObserver' in window){
+    var ro = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){ e.target.classList.add('vis'); ro.unobserve(e.target); }
+      });
+    },{threshold:0.1});
+    reveals.forEach(function(el){ ro.observe(el); });
+  } else {
+    reveals.forEach(function(el){ el.classList.add('vis'); });
+  }
+
+  // FAQ
+  var faqs = document.querySelectorAll('.faq-item');
+  faqs.forEach(function(item){
+    item.querySelector('.faq-q').addEventListener('click',function(){
+      var open = item.classList.contains('open');
+      faqs.forEach(function(f){ f.classList.remove('open'); });
+      if(!open) item.classList.add('open');
+    });
+  });
+})();
+</script>
+</body>
+</html>

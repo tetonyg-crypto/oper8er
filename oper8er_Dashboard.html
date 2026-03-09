@@ -1,0 +1,1471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oper8er — Execution Intelligence Platform</title>
+<style>
+/* ── DESIGN SYSTEM (exact match to landing page) ───────── */
+:root {
+  --navy:      #080f18;
+  --navy-card: #0d1b2a;
+  --navy-deep: #050b12;
+  --navy-mid:  #0a1422;
+  --teal:      #00d4c8;
+  --teal-dim:  rgba(0,212,200,0.12);
+  --lime:      #c8e032;
+  --lime-dim:  rgba(200,224,50,0.10);
+  --purple:    #a78bfa;
+  --green:     #22c55e;
+  --red:       #f87171;
+  --amber:     #fbbf24;
+  --white:     #ffffff;
+  --w60:       rgba(255,255,255,0.60);
+  --w40:       rgba(255,255,255,0.40);
+  --w20:       rgba(255,255,255,0.20);
+  --w08:       rgba(255,255,255,0.08);
+  --w04:       rgba(255,255,255,0.04);
+  --border:    rgba(255,255,255,0.06);
+  --b-teal:    rgba(0,212,200,0.18);
+  --b-lime:    rgba(200,224,50,0.18);
+  --b-purple:  rgba(167,139,250,0.18);
+  --b-red:     rgba(239,68,68,0.18);
+  --b-green:   rgba(34,197,94,0.18);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: var(--navy-deep); font-family: -apple-system,'SF Pro Display','Helvetica Neue',Arial,sans-serif; }
+
+/* ── PRESENTATION SHELL ─────────────────────────────────── */
+#pres {
+  width: 100vw; height: 100vh;
+  position: relative; overflow: hidden;
+}
+
+/* ── SLIDES ─────────────────────────────────────────────── */
+.slide {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  padding: 0;
+  opacity: 0; pointer-events: none;
+  transform: translateX(40px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  overflow: hidden;
+}
+.slide.active {
+  opacity: 1; pointer-events: all;
+  transform: translateX(0);
+}
+.slide.exit {
+  opacity: 0;
+  transform: translateX(-40px);
+}
+
+/* ── SLIDE HEADER ───────────────────────────────────────── */
+.slide-header {
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 36px 16px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(8,15,24,0.95);
+  position: relative; z-index: 10;
+}
+.slide-header-left { display: flex; align-items: center; gap: 16px; }
+.logo { font-size: 15px; font-weight: 900; color: var(--white); letter-spacing: -0.3px; }
+.logo span { color: var(--teal); }
+.slide-tag {
+  font-size: 9px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--teal); background: rgba(0,212,200,0.08); border: 1px solid rgba(0,212,200,0.18);
+  padding: 4px 10px; border-radius: 20px;
+}
+.slide-title-bar { font-size: 13px; font-weight: 700; color: var(--w40); }
+
+/* ── SLIDE BODY ─────────────────────────────────────────── */
+.slide-body {
+  flex: 1; overflow: hidden;
+  padding: 24px 36px 16px;
+  display: flex; flex-direction: column;
+}
+
+/* ── NAV BAR ────────────────────────────────────────────── */
+#nav-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 36px;
+  background: rgba(5,11,18,0.96);
+  border-top: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+  z-index: 200;
+}
+.nav-dots { display: flex; align-items: center; gap: 8px; }
+.nav-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--w20); border: 1px solid transparent;
+  cursor: pointer; transition: all 0.2s;
+}
+.nav-dot.active { background: var(--teal); border-color: rgba(0,212,200,0.4); width: 20px; border-radius: 3px; }
+.nav-btns { display: flex; align-items: center; gap: 10px; }
+.nav-btn {
+  background: var(--w08); border: 1px solid var(--border);
+  color: var(--w60); border-radius: 8px; padding: 8px 16px;
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  transition: all 0.15s; display: flex; align-items: center; gap: 6px;
+}
+.nav-btn:hover { background: var(--w08+); border-color: rgba(0,212,200,0.2); color: var(--white); }
+.nav-btn.primary { background: var(--lime); color: #0a0f0a; border-color: transparent; font-weight: 800; }
+.nav-btn.primary:hover { background: #d4ec3c; }
+.slide-counter { font-size: 11px; font-weight: 700; color: var(--w20); letter-spacing: 1px; }
+
+/* ── SHARED COMPONENTS ──────────────────────────────────── */
+.label {
+  font-size: 9px; font-weight: 800; letter-spacing: 2.5px; text-transform: uppercase;
+  color: var(--teal); margin-bottom: 6px; display: flex; align-items: center; gap: 8px;
+}
+.label::before { content: ''; width: 16px; height: 1px; background: var(--teal); opacity: 0.5; }
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 8px; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 20px;
+}
+.b-teal { background: rgba(0,212,200,0.10); color: var(--teal); border: 1px solid rgba(0,212,200,0.2); }
+.b-lime { background: rgba(200,224,50,0.10); color: var(--lime); border: 1px solid rgba(200,224,50,0.2); }
+.b-green { background: rgba(34,197,94,0.10); color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
+.b-red { background: rgba(239,68,68,0.10); color: var(--red); border: 1px solid rgba(239,68,68,0.2); }
+.b-amber { background: rgba(251,191,36,0.10); color: var(--amber); border: 1px solid rgba(251,191,36,0.2); }
+.b-purple { background: rgba(167,139,250,0.10); color: var(--purple); border: 1px solid rgba(167,139,250,0.2); }
+
+.panel {
+  background: var(--navy-card); border: 1px solid var(--border);
+  border-radius: 12px; overflow: hidden;
+}
+.panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.panel-title { font-size: 9px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--w40); }
+.panel-body { padding: 12px 14px; }
+
+.sep { height: 1px; background: var(--border); margin: 8px 0; }
+
+/* ── SLIDE 1: SYSTEM ACTIVATION ────────────────────────── */
+.s1-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  flex: 1;
+  min-height: 0;
+}
+.s1-left { display: flex; flex-direction: column; gap: 10px; }
+.s1-right { display: flex; flex-direction: column; gap: 10px; }
+
+/* Inbound msg */
+.inbound-msg {
+  background: #1b2835; border-radius: 10px; padding: 12px 14px;
+  border-left: 3px solid rgba(255,255,255,0.12);
+  font-size: 14px; font-weight: 500; color: var(--white); line-height: 1.5;
+}
+.msg-meta { font-size: 9.5px; color: var(--w20); margin-top: 6px; display: flex; gap: 12px; }
+
+/* Detection rows */
+.detect-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 10px; background: var(--w04); border-radius: 7px;
+}
+.detect-label { font-size: 11px; color: var(--w60); }
+.detect-val { font-size: 9.5px; font-weight: 800; padding: 2px 7px; border-radius: 4px; }
+.dv-hot { background: rgba(239,68,68,0.12); color: var(--red); }
+.dv-ok { background: rgba(34,197,94,0.12); color: var(--green); }
+.dv-med { background: rgba(251,191,36,0.12); color: var(--amber); }
+
+/* Engine active card */
+.engine-active {
+  background: rgba(200,224,50,0.05); border: 1px solid rgba(200,224,50,0.2);
+  border-radius: 9px; padding: 11px 13px;
+  display: flex; align-items: center; gap: 11px;
+}
+.engine-icon {
+  width: 30px; height: 30px; border-radius: 8px;
+  background: rgba(200,224,50,0.1); border: 1px solid rgba(200,224,50,0.2);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.engine-name { font-size: 13px; font-weight: 800; color: var(--white); }
+.engine-sub { font-size: 10px; color: var(--w40); }
+.engine-pills { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px; }
+.engine-pill { font-size: 8.5px; color: var(--w20); background: var(--w04); border: 1px solid var(--border); padding: 2px 7px; border-radius: 8px; }
+
+/* Response panels */
+.resp-bad {
+  background: rgba(239,68,68,0.04); border: 1px solid rgba(239,68,68,0.1);
+  border-radius: 8px; padding: 10px 12px;
+}
+.resp-bad-label { font-size: 8.5px; font-weight: 800; color: var(--red); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 5px; }
+.resp-bad-text { font-size: 11.5px; color: rgba(255,255,255,0.3); font-style: italic; line-height: 1.5; }
+.resp-good {
+  background: rgba(0,212,200,0.05); border: 1px solid rgba(0,212,200,0.15);
+  border-radius: 8px; padding: 11px 13px; flex: 1;
+}
+.resp-good-label { font-size: 8.5px; font-weight: 800; color: var(--teal); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+.resp-good-text { font-size: 12.5px; color: var(--white); line-height: 1.55; }
+.resp-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
+.resp-tag { font-size: 8px; font-weight: 700; color: var(--teal); background: rgba(0,212,200,0.08); border: 1px solid rgba(0,212,200,0.15); padding: 2px 6px; border-radius: 4px; }
+
+/* ── SLIDE 2: PIPELINE FLOW ─────────────────────────────── */
+.flow-wrap {
+  flex: 1; display: flex; flex-direction: column;
+  justify-content: center; gap: 0; min-height: 0;
+}
+.flow-row {
+  display: flex; align-items: center; gap: 0;
+  justify-content: center;
+}
+.flow-node {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 5px; flex: 0 0 auto;
+}
+.flow-box {
+  background: var(--navy-card); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px 14px; text-align: center;
+  min-width: 100px;
+  position: relative; overflow: hidden;
+}
+.flow-box::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+}
+.fb-teal::before { background: var(--teal); }
+.fb-lime::before { background: var(--lime); }
+.fb-purple::before { background: var(--purple); }
+.fb-green::before { background: var(--green); }
+
+.flow-box-icon { font-size: 18px; margin-bottom: 4px; }
+.flow-box-name { font-size: 10px; font-weight: 800; color: var(--white); letter-spacing: -0.2px; }
+.flow-box-sub { font-size: 8.5px; color: var(--w40); margin-top: 2px; line-height: 1.3; }
+
+.flow-arrow {
+  flex: 0 0 auto; display: flex; flex-direction: column; align-items: center;
+  padding: 0 4px;
+}
+.flow-arrow-line {
+  width: 28px; height: 1.5px; background: rgba(0,212,200,0.3);
+  position: relative;
+}
+.flow-arrow-line::after {
+  content: ''; position: absolute; right: -5px; top: -3.5px;
+  width: 0; height: 0;
+  border-left: 6px solid rgba(0,212,200,0.4);
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+}
+.flow-arrow-label { font-size: 7.5px; color: var(--w20); margin-top: 4px; text-align: center; width: 36px; }
+
+/* Cascade outputs below */
+.flow-cascade {
+  display: flex; justify-content: center; gap: 12px;
+  margin-top: 0;
+}
+.flow-vert {
+  display: flex; flex-direction: column; align-items: center; gap: 0;
+}
+.flow-vert-line {
+  width: 1.5px; height: 22px; background: rgba(0,212,200,0.25);
+}
+.cascade-mini {
+  background: var(--navy-card); border: 1px solid var(--border);
+  border-radius: 9px; padding: 9px 12px; min-width: 100px; text-align: center;
+  border-top: 2px solid;
+}
+.cm-teal { border-top-color: var(--teal); }
+.cm-lime { border-top-color: var(--lime); }
+.cm-purple { border-top-color: var(--purple); }
+.cm-green { border-top-color: var(--green); }
+.cascade-mini-title { font-size: 9.5px; font-weight: 800; color: var(--white); margin-bottom: 2px; }
+.cascade-mini-sub { font-size: 8px; color: var(--w40); line-height: 1.3; }
+
+/* ── SLIDE 3: REP CONSOLE ───────────────────────────────── */
+.s3-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr 0.9fr;
+  gap: 10px;
+  flex: 1; min-height: 0;
+}
+.s3-col { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+
+/* Convo list */
+.convo-item {
+  display: flex; align-items: flex-start; gap: 9px;
+  padding: 8px 10px; border-radius: 8px; cursor: pointer;
+  transition: background 0.15s;
+}
+.convo-item.active-convo { background: rgba(0,212,200,0.06); border: 1px solid rgba(0,212,200,0.12); }
+.convo-item:not(.active-convo) { background: var(--w04); border: 1px solid transparent; }
+.convo-avatar {
+  width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 800; color: var(--white);
+}
+.convo-name { font-size: 11px; font-weight: 700; color: var(--white); line-height: 1.2; }
+.convo-preview { font-size: 9.5px; color: var(--w40); margin-top: 1px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
+.convo-time { font-size: 8.5px; color: var(--w20); margin-left: auto; flex-shrink: 0; }
+.convo-badge { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-top: 8px; }
+
+/* Next best action */
+.nba {
+  background: rgba(200,224,50,0.06); border: 1px solid rgba(200,224,50,0.18);
+  border-radius: 9px; padding: 11px 12px;
+}
+.nba-label { font-size: 8.5px; font-weight: 800; color: var(--lime); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 7px; }
+.nba-action { font-size: 12px; font-weight: 700; color: var(--white); line-height: 1.4; }
+.nba-why { font-size: 10px; color: var(--w40); margin-top: 4px; line-height: 1.4; }
+.nba-btn { background: var(--lime); color: #0a0f0a; border: none; border-radius: 6px; font-size: 9px; font-weight: 800; padding: 6px 12px; cursor: pointer; margin-top: 8px; width: 100%; }
+
+/* Queue items */
+.queue-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 7px 10px; background: var(--w04); border-radius: 7px;
+  border: 1px solid var(--border);
+}
+.qi-avatar { width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 800; }
+.qi-name { font-size: 10.5px; font-weight: 700; color: var(--white); }
+.qi-type { font-size: 8.5px; color: var(--w40); }
+.qi-due { margin-left: auto; font-size: 8px; font-weight: 700; padding: 2px 5px; border-radius: 4px; flex-shrink: 0; }
+
+/* ── SLIDE 4: MANAGER DASHBOARD ─────────────────────────── */
+.s4-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr 1fr;
+  gap: 10px; flex: 1; min-height: 0;
+}
+.s4-col { display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow: hidden; }
+
+/* Deal rows */
+.deal-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 11px; border-radius: 8px; border: 1px solid;
+}
+.dr-healthy { background: rgba(34,197,94,0.05); border-color: rgba(34,197,94,0.12); }
+.dr-risk { background: rgba(251,191,36,0.05); border-color: rgba(251,191,36,0.12); }
+.dr-crit { background: rgba(239,68,68,0.05); border-color: rgba(239,68,68,0.12); }
+.dr-name { flex: 1; }
+.dr-pname { font-size: 11px; font-weight: 700; color: var(--white); }
+.dr-signal { font-size: 8.5px; color: var(--w40); margin-top: 2px; }
+.dr-score { font-size: 22px; font-weight: 900; letter-spacing: -1px; min-width: 32px; text-align: right; }
+.dr-healthy .dr-score { color: var(--green); }
+.dr-risk .dr-score { color: var(--amber); }
+.dr-crit .dr-score { color: var(--red); }
+
+/* Rep rankings */
+.rep-row {
+  display: flex; align-items: center; gap: 9px;
+  padding: 7px 10px; background: var(--w04); border-radius: 7px;
+}
+.rep-rank { font-size: 11px; font-weight: 900; color: var(--w20); min-width: 16px; }
+.rep-avatar { width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 800; }
+.rep-name { flex: 1; font-size: 11px; font-weight: 700; color: var(--white); }
+.rep-score-wrap { display: flex; flex-direction: column; align-items: flex-end; }
+.rep-score { font-size: 14px; font-weight: 900; }
+.rep-label { font-size: 7.5px; color: var(--w20); }
+.rep-bar-wrap { margin-top: 4px; height: 3px; background: rgba(255,255,255,0.07); border-radius: 2px; overflow: hidden; }
+.rep-bar { height: 100%; border-radius: 2px; background: var(--teal); }
+
+/* Alerts */
+.alert-item {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 9px 11px; border-radius: 8px; border: 1px solid;
+}
+.alert-crit { background: rgba(239,68,68,0.05); border-color: rgba(239,68,68,0.12); }
+.alert-warn { background: rgba(251,191,36,0.05); border-color: rgba(251,191,36,0.12); }
+.alert-info { background: rgba(0,212,200,0.05); border-color: rgba(0,212,200,0.12); }
+.alert-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
+.alert-text { font-size: 11px; color: var(--w60); line-height: 1.4; }
+.alert-text strong { color: var(--white); }
+.alert-time { font-size: 8.5px; color: var(--w20); margin-left: auto; flex-shrink: 0; }
+
+/* ── SLIDE 5: DEAL AUTOPSY ──────────────────────────────── */
+.s5-grid {
+  display: grid; grid-template-columns: 1fr 0.85fr;
+  gap: 14px; flex: 1; min-height: 0;
+}
+.s5-left { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.s5-right { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+
+.autopsy-header {
+  background: rgba(239,68,68,0.05); border: 1px solid rgba(239,68,68,0.12);
+  border-top: 2px solid var(--red); border-radius: 10px; padding: 12px 14px;
+}
+.autopsy-deal-name { font-size: 14px; font-weight: 800; color: var(--white); margin-bottom: 4px; }
+.autopsy-meta { display: flex; gap: 10px; flex-wrap: wrap; }
+.autopsy-meta-item { font-size: 9px; color: var(--w40); display: flex; align-items: center; gap: 4px; }
+
+/* Timeline */
+.timeline { display: flex; flex-direction: column; gap: 0; }
+.tl-event { display: flex; gap: 12px; padding-bottom: 12px; position: relative; }
+.tl-event::before {
+  content: ''; position: absolute; left: 5px; top: 14px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.tl-event:last-child::before { display: none; }
+.tl-event:last-child { padding-bottom: 0; }
+.tl-dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid; flex-shrink: 0; margin-top: 2px; }
+.tl-ok { border-color: var(--green); background: rgba(34,197,94,0.12); }
+.tl-warn { border-color: var(--amber); background: rgba(251,191,36,0.12); }
+.tl-fail { border-color: var(--red); background: rgba(239,68,68,0.12); }
+.tl-time { font-size: 9px; color: var(--w20); min-width: 72px; padding-top: 1px; }
+.tl-text { font-size: 11.5px; color: var(--w60); line-height: 1.45; }
+.tl-fail-text { color: var(--red); font-weight: 700; }
+
+.root-cause {
+  background: rgba(239,68,68,0.05); border: 1px solid rgba(239,68,68,0.15);
+  border-left: 3px solid var(--red); border-radius: 8px; padding: 12px 14px;
+}
+.root-label { font-size: 8.5px; font-weight: 800; color: var(--red); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+.root-text { font-size: 12px; color: var(--w60); line-height: 1.55; }
+
+/* Failure breakdown bars */
+.failure-bar-row { margin-bottom: 12px; }
+.failure-bar-label { font-size: 10px; color: var(--w60); display: flex; justify-content: space-between; margin-bottom: 5px; }
+.failure-bar-label span { color: var(--red); font-weight: 700; }
+.failure-bar-track { height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; }
+.failure-bar-fill { height: 100%; background: rgba(239,68,68,0.5); border-radius: 3px; }
+
+/* ── SLIDE 6: BENCHMARKS ────────────────────────────────── */
+.s6-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 14px; flex: 1; min-height: 0;
+}
+.s6-left { display: flex; flex-direction: column; gap: 10px; }
+.s6-right { display: flex; flex-direction: column; gap: 10px; }
+
+.bench-metric {
+  background: var(--navy-card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px;
+}
+.bench-metric-title { font-size: 9px; font-weight: 700; color: var(--w40); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px; }
+.bench-bars { display: flex; flex-direction: column; gap: 8px; }
+.bench-bar-row { display: flex; align-items: center; gap: 10px; }
+.bench-bar-label { font-size: 9.5px; color: var(--w40); min-width: 90px; }
+.bench-bar-track { flex: 1; height: 8px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; position: relative; }
+.bench-bar-yours { height: 100%; border-radius: 4px; }
+.bench-bar-val { font-size: 9.5px; font-weight: 800; min-width: 55px; text-align: right; }
+
+.bench-legend { display: flex; gap: 14px; margin-top: 10px; }
+.bl-item { display: flex; align-items: center; gap: 5px; font-size: 8.5px; color: var(--w40); }
+.bl-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+.network-card {
+  background: rgba(0,212,200,0.04); border: 1px solid rgba(0,212,200,0.12);
+  border-radius: 10px; padding: 14px 16px; flex: 1;
+}
+.network-title { font-size: 12px; font-weight: 800; color: var(--white); margin-bottom: 8px; }
+.network-desc { font-size: 11.5px; color: var(--w40); line-height: 1.6; }
+.network-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+.net-stat { background: rgba(0,212,200,0.05); border: 1px solid rgba(0,212,200,0.1); border-radius: 7px; padding: 10px; text-align: center; }
+.net-stat-val { font-size: 22px; font-weight: 900; color: var(--teal); letter-spacing: -1px; }
+.net-stat-label { font-size: 8.5px; color: var(--w40); margin-top: 2px; }
+
+/* ── SLIDE TITLE BLOCK ──────────────────────────────────── */
+.slide-heading {
+  margin-bottom: 16px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+}
+.slide-heading-left {}
+.slide-h1 {
+  font-size: 22px; font-weight: 900; letter-spacing: -0.8px; color: var(--white);
+  line-height: 1.1; margin-bottom: 2px;
+}
+.slide-h1 em { font-style: normal; color: var(--teal); }
+.slide-sub { font-size: 11.5px; color: var(--w40); line-height: 1.5; max-width: 600px; }
+
+/* ── BACKGROUND GRID ────────────────────────────────────── */
+.slide::before {
+  content: '';
+  position: absolute; inset: 0; pointer-events: none; z-index: 0;
+  background-image:
+    linear-gradient(rgba(0,212,200,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,200,0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+.slide-body, .slide-header { position: relative; z-index: 1; }
+
+/* ── SPOTLIGHT BADGE (slide 1 accent) ──────────────────── */
+.live-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--green); display: inline-block;
+  animation: live-pulse 1.8s ease-in-out infinite;
+  margin-right: 5px;
+}
+@keyframes live-pulse {
+  0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(34,197,94,0.4)}
+  50%{opacity:0.7;box-shadow:0 0 0 4px rgba(34,197,94,0)}
+}
+
+/* Scrollable inner areas */
+.scroll-inner { overflow-y: auto; flex: 1; min-height: 0; }
+.scroll-inner::-webkit-scrollbar { width: 3px; }
+.scroll-inner::-webkit-scrollbar-track { background: transparent; }
+.scroll-inner::-webkit-scrollbar-thumb { background: var(--w20); border-radius: 2px; }
+
+</style>
+</head>
+<body>
+
+<div id="pres">
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 1 — SYSTEM ACTIVATION PANEL
+══════════════════════════════════════════════ -->
+<div class="slide active" data-slide="1">
+  <div class="slide-header">
+    <div class="slide-header-left">
+      <div class="logo">YENES <span>·</span> Oper8er</div>
+      <span class="slide-tag">System Activation</span>
+    </div>
+    <div class="slide-title-bar">01 — Execution in Action</div>
+  </div>
+  <div class="slide-body">
+    <div class="slide-heading">
+      <div class="slide-heading-left">
+        <div class="label">Live Demonstration</div>
+        <div class="slide-h1">Inbound message. <em>Engine activated.</em></div>
+        <div class="slide-sub">The system identifies conversation context and activates the correct specialized execution engine. Not a chatbot. Not a generic AI. Targeted execution protocol.</div>
+      </div>
+      <span style="font-size:9px;font-weight:700;color:var(--w20);padding:4px 10px;border:1px solid var(--border);border-radius:6px;"><span class="live-dot"></span> Live System</span>
+    </div>
+    <div class="s1-grid">
+      <!-- LEFT -->
+      <div class="s1-left">
+        <!-- Inbound -->
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">Inbound Message</span>
+            <span class="badge b-red">Requires Response</span>
+          </div>
+          <div class="panel-body">
+            <div class="inbound-msg">"This isn't really a priority right now. We're happy with how things are going."</div>
+            <div class="msg-meta"><span>Sarah Chen · Lead #4,281</span><span>Received 2:14pm</span><span>Stage: Consideration</span></div>
+          </div>
+        </div>
+        <!-- Intent Detection -->
+        <div class="panel" style="border-top:2px solid var(--teal);">
+          <div class="panel-header">
+            <span class="panel-title">Intent Detection</span>
+            <span class="badge b-teal">Processing</span>
+          </div>
+          <div class="panel-body" style="display:flex;flex-direction:column;gap:5px;">
+            <div class="detect-row"><span class="detect-label">Priority Objection</span><span class="detect-val dv-hot">DETECTED</span></div>
+            <div class="detect-row"><span class="detect-label">Stalling Language</span><span class="detect-val dv-hot">DETECTED</span></div>
+            <div class="detect-row"><span class="detect-label">Price Signal</span><span class="detect-val dv-ok">ABSENT</span></div>
+            <div class="detect-row"><span class="detect-label">Scheduling Readiness</span><span class="detect-val dv-med">LOW</span></div>
+            <div class="detect-row"><span class="detect-label">Conversation Stage</span><span class="detect-val dv-hot">OBJECTION PHASE</span></div>
+          </div>
+        </div>
+        <!-- Engine Selection -->
+        <div class="panel" style="border-top:2px solid var(--lime);">
+          <div class="panel-header">
+            <span class="panel-title">Engine Selection</span>
+            <span class="badge b-lime">Active</span>
+          </div>
+          <div class="panel-body">
+            <div class="engine-active">
+              <div class="engine-icon">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 1L2 5.5v9h12v-9L8 1z" stroke="#c8e032" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 14.5v-5h4v5" stroke="#c8e032" stroke-width="1.4" stroke-linecap="round"/></svg>
+              </div>
+              <div style="flex:1">
+                <div class="engine-name">Objection Engine</div>
+                <div class="engine-sub">Priority objection redirect protocol · Active</div>
+              </div>
+              <span class="badge b-lime">ACTIVE</span>
+            </div>
+            <div class="engine-pills" style="margin-top:7px;">
+              <span class="engine-pill">Appointment Engine</span>
+              <span class="engine-pill">Follow-Up Engine</span>
+              <span class="engine-pill">Qualification Engine</span>
+              <span class="engine-pill">Recovery Engine</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- RIGHT -->
+      <div class="s1-right">
+        <div class="panel" style="flex:1;border-top:2px solid var(--teal);display:flex;flex-direction:column;">
+          <div class="panel-header">
+            <span class="panel-title">Response Guidance</span>
+            <span class="badge b-teal">Objection Engine Output</span>
+          </div>
+          <div class="panel-body" style="flex:1;display:flex;flex-direction:column;gap:8px;">
+            <div class="resp-bad">
+              <div class="resp-bad-label">
+                <svg width="8" height="8" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" fill="rgba(239,68,68,0.2)"/><path d="M3 3l4 4M7 3l-4 4" stroke="#f87171" stroke-width="1.2"/></svg>
+                Without Oper8er
+              </div>
+              <div class="resp-bad-text">"No problem, reach out whenever you're ready!"</div>
+            </div>
+            <div class="resp-good" style="flex:1">
+              <div class="resp-good-label">
+                <svg width="8" height="8" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" fill="rgba(0,212,200,0.2)"/><path d="M2.5 5l2 2 3-3.5" stroke="#00d4c8" stroke-width="1.2" stroke-linecap="round"/></svg>
+                Objection Engine
+              </div>
+              <div class="resp-good-text">"Totally fair. Most teams think that until they see how many conversations die after the first reply because no one follows up consistently. If we could show you that pattern in 10 minutes Monday, would it be worth a quick look?"</div>
+              <div class="resp-tags">
+                <span class="resp-tag">No Concession</span>
+                <span class="resp-tag">Pattern Proof</span>
+                <span class="resp-tag">Binary Ask</span>
+                <span class="resp-tag">Appointment Redirect</span>
+              </div>
+            </div>
+            <!-- What fires -->
+            <div style="padding:10px 12px;background:rgba(34,197,94,0.04);border:1px solid rgba(34,197,94,0.1);border-radius:8px;">
+              <div style="font-size:8.5px;font-weight:800;color:var(--green);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">On Send — Automatic</div>
+              <div style="display:flex;flex-direction:column;gap:4px;">
+                <div style="font-size:10.5px;color:var(--w60);display:flex;align-items:center;gap:6px;"><svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="rgba(0,212,200,0.1)"/><path d="M2.5 5l2 2 3-3.5" stroke="#00d4c8" stroke-width="1.2" stroke-linecap="round"/></svg>CRM note structured &amp; logged</div>
+                <div style="font-size:10.5px;color:var(--w60);display:flex;align-items:center;gap:6px;"><svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="rgba(0,212,200,0.1)"/><path d="M2.5 5l2 2 3-3.5" stroke="#00d4c8" stroke-width="1.2" stroke-linecap="round"/></svg>Deal Momentum Score updated</div>
+                <div style="font-size:10.5px;color:var(--w60);display:flex;align-items:center;gap:6px;"><svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="rgba(0,212,200,0.1)"/><path d="M2.5 5l2 2 3-3.5" stroke="#00d4c8" stroke-width="1.2" stroke-linecap="round"/></svg>24hr follow-up queued</div>
+                <div style="font-size:10.5px;color:var(--w60);display:flex;align-items:center;gap:6px;"><svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="rgba(0,212,200,0.1)"/><path d="M2.5 5l2 2 3-3.5" stroke="#00d4c8" stroke-width="1.2" stroke-linecap="round"/></svg>Telemetry event recorded</div>
+              </div>
+            </div>
+            <button class="nba-btn" style="font-size:10px;padding:10px;">Review &amp; Send →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 2 — EXECUTION PIPELINE
+══════════════════════════════════════════════ -->
+<div class="slide" data-slide="2">
+  <div class="slide-header">
+    <div class="slide-header-left">
+      <div class="logo">YENES <span>·</span> Oper8er</div>
+      <span class="slide-tag">Execution Pipeline</span>
+    </div>
+    <div class="slide-title-bar">02 — System Flow</div>
+  </div>
+  <div class="slide-body">
+    <div class="slide-heading">
+      <div class="slide-heading-left">
+        <div class="label">Complete System Flow</div>
+        <div class="slide-h1">One interaction. <em>Four layers of value.</em></div>
+        <div class="slide-sub">Every inbound message flows through the full execution stack — from intent detection to intelligence layer update — automatically.</div>
+      </div>
+    </div>
+
+    <div class="flow-wrap">
+      <!-- Main flow row -->
+      <div class="flow-row" style="margin-bottom:0;">
+        <div class="flow-node">
+          <div class="flow-box fb-teal" style="min-width:90px;">
+            <div class="flow-box-icon">📩</div>
+            <div class="flow-box-name">Customer Message</div>
+            <div class="flow-box-sub">Inbound via any channel</div>
+          </div>
+        </div>
+        <div class="flow-arrow"><div class="flow-arrow-line"></div><div class="flow-arrow-label">Received</div></div>
+        <div class="flow-node">
+          <div class="flow-box fb-teal" style="min-width:90px;">
+            <div class="flow-box-icon">🔍</div>
+            <div class="flow-box-name">Intent Detection</div>
+            <div class="flow-box-sub">Stage · Friction · Context</div>
+          </div>
+        </div>
+        <div class="flow-arrow"><div class="flow-arrow-line"></div><div class="flow-arrow-label">Analyzed</div></div>
+        <div class="flow-node">
+          <div class="flow-box fb-lime" style="min-width:90px;border-color:rgba(200,224,50,0.2);">
+            <div class="flow-box-icon">⚡</div>
+            <div class="flow-box-name">Engine Selection</div>
+            <div class="flow-box-sub">5 specialized protocols</div>
+          </div>
+        </div>
+        <div class="flow-arrow"><div class="flow-arrow-line"></div><div class="flow-arrow-label">Activated</div></div>
+        <div class="flow-node">
+          <div class="flow-box fb-teal" style="min-width:90px;">
+            <div class="flow-box-icon">💬</div>
+            <div class="flow-box-name">Response Guided</div>
+            <div class="flow-box-sub">Rep reviews &amp; sends</div>
+          </div>
+        </div>
+        <div class="flow-arrow"><div class="flow-arrow-line"></div><div class="flow-arrow-label">Sent</div></div>
+        <div class="flow-node">
+          <div class="flow-box fb-lime" style="min-width:90px;border-color:rgba(200,224,50,0.2);">
+            <div class="flow-box-icon">⚙</div>
+            <div class="flow-box-name">Cascade Fires</div>
+            <div class="flow-box-sub">4 outputs, 0 rep effort</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Connector lines down -->
+      <div style="display:flex;justify-content:center;margin:2px 0;">
+        <div style="width:1.5px;height:20px;background:rgba(0,212,200,0.25);"></div>
+      </div>
+
+      <!-- Cascade panels -->
+      <div class="flow-cascade">
+        <div class="flow-vert">
+          <div class="cascade-mini cm-teal">
+            <div style="font-size:14px;margin-bottom:4px;">📝</div>
+            <div class="cascade-mini-title">CRM Note</div>
+            <div class="cascade-mini-sub">Structured 5-field schema. Auto-logged.</div>
+          </div>
+        </div>
+        <div class="flow-vert">
+          <div class="cascade-mini cm-purple">
+            <div style="font-size:14px;margin-bottom:4px;">📊</div>
+            <div class="cascade-mini-title">Deal Score</div>
+            <div class="cascade-mini-sub">Momentum recalculated from execution signals.</div>
+          </div>
+        </div>
+        <div class="flow-vert">
+          <div class="cascade-mini cm-lime">
+            <div style="font-size:14px;margin-bottom:4px;">📅</div>
+            <div class="cascade-mini-title">Follow-Up Queued</div>
+            <div class="cascade-mini-sub">4-tier cadence scheduled automatically.</div>
+          </div>
+        </div>
+        <div class="flow-vert">
+          <div class="cascade-mini cm-teal">
+            <div style="font-size:14px;margin-bottom:4px;">🔬</div>
+            <div class="cascade-mini-title">Telemetry Event</div>
+            <div class="cascade-mini-sub">Execution recorded. Feeds intelligence layer.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Down to intelligence -->
+      <div style="display:flex;justify-content:center;margin:2px 0;">
+        <div style="width:1.5px;height:20px;background:rgba(167,139,250,0.3);"></div>
+      </div>
+
+      <!-- Intelligence final -->
+      <div style="display:flex;justify-content:center;">
+        <div class="flow-box fb-purple" style="min-width:300px;text-align:center;border-color:rgba(167,139,250,0.2);background:rgba(167,139,250,0.06);">
+          <div style="display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;">
+            <div>
+              <div class="flow-box-icon" style="font-size:20px;">🧠</div>
+              <div class="flow-box-name" style="font-size:12px;">Intelligence Layer Update</div>
+              <div class="flow-box-sub" style="max-width:400px;">Deal health scores · Rep performance rankings · Failure pattern alerts · Pipeline momentum signals</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Callout bar -->
+      <div style="margin-top:16px;padding:12px 20px;background:rgba(200,224,50,0.05);border:1px solid rgba(200,224,50,0.15);border-radius:10px;display:flex;align-items:center;justify-content:center;gap:24px;flex-wrap:wrap;">
+        <div style="font-size:11px;color:var(--w60);display:flex;align-items:center;gap:6px;">
+          <span style="color:var(--lime);font-weight:800;">1</span> rep action
+        </div>
+        <div style="width:1px;height:16px;background:var(--border);"></div>
+        <div style="font-size:11px;color:var(--w60);display:flex;align-items:center;gap:6px;">
+          <span style="color:var(--lime);font-weight:800;">4</span> automatic outputs
+        </div>
+        <div style="width:1px;height:16px;background:var(--border);"></div>
+        <div style="font-size:11px;color:var(--w60);display:flex;align-items:center;gap:6px;">
+          <span style="color:var(--lime);font-weight:800;">0</span> additional effort
+        </div>
+        <div style="width:1px;height:16px;background:var(--border);"></div>
+        <div style="font-size:11px;color:var(--w60);display:flex;align-items:center;gap:6px;">
+          <span style="color:var(--teal);font-weight:800;">100%</span> execution captured
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 3 — REP EXECUTION CONSOLE
+══════════════════════════════════════════════ -->
+<div class="slide" data-slide="3">
+  <div class="slide-header">
+    <div class="slide-header-left">
+      <div class="logo">YENES <span>·</span> Oper8er</div>
+      <span class="slide-tag">Rep Execution Console</span>
+    </div>
+    <div class="slide-title-bar">03 — Sales Rep Interface</div>
+  </div>
+  <div class="slide-body">
+    <div class="slide-heading">
+      <div class="slide-heading-left">
+        <div class="label">Rep-Facing Interface</div>
+        <div class="slide-h1">Every rep. <em>Executing the system.</em></div>
+        <div class="slide-sub">Reps see active conversations, guided responses, engine status, and their follow-up queue — all in one interface layered over the existing CRM.</div>
+      </div>
+    </div>
+    <div class="s3-grid" style="flex:1;min-height:0;">
+      <!-- Col 1: Active conversations -->
+      <div class="s3-col">
+        <div class="panel" style="flex:1;display:flex;flex-direction:column;">
+          <div class="panel-header">
+            <span class="panel-title">Active Conversations</span>
+            <span class="badge b-red">3 Need Action</span>
+          </div>
+          <div class="panel-body scroll-inner" style="flex:1;display:flex;flex-direction:column;gap:5px;">
+            <div class="convo-item active-convo">
+              <div class="convo-avatar" style="background:linear-gradient(135deg,#00d4c8,#0a7af4);">S</div>
+              <div style="flex:1;min-width:0;">
+                <div class="convo-name">Sarah Chen</div>
+                <div class="convo-preview">"This isn't really a priority..."</div>
+              </div>
+              <span class="convo-badge" style="background:var(--red);"></span>
+              <div class="convo-time">2 min</div>
+            </div>
+            <div class="convo-item">
+              <div class="convo-avatar" style="background:linear-gradient(135deg,#a78bfa,#5b6ef5);">M</div>
+              <div style="flex:1;min-width:0;">
+                <div class="convo-name">Mike Brennan</div>
+                <div class="convo-preview">"What's the best price you can do?"</div>
+              </div>
+              <span class="convo-badge" style="background:var(--amber);"></span>
+              <div class="convo-time">14 min</div>
+            </div>
+            <div class="convo-item">
+              <div class="convo-avatar" style="background:linear-gradient(135deg,#22c55e,#059669);">J</div>
+              <div style="flex:1;min-width:0;">
+                <div class="convo-name">Jessica Torres</div>
+                <div class="convo-preview">"Maybe this weekend would work..."</div>
+              </div>
+              <span class="convo-badge" style="background:var(--amber);"></span>
+              <div class="convo-time">32 min</div>
+            </div>
+            <div class="convo-item">
+              <div class="convo-avatar" style="background:linear-gradient(135deg,#f59e0b,#f87171);">D</div>
+              <div style="flex:1;min-width:0;">
+                <div class="convo-name">David Park</div>
+                <div class="convo-preview">"Still thinking about it..."</div>
+              </div>
+              <span class="convo-badge" style="background:var(--w20);"></span>
+              <div class="convo-time">1 hr</div>
+            </div>
+            <div class="convo-item">
+              <div class="convo-avatar" style="background:linear-gradient(135deg,#60a5fa,#a78bfa);">R</div>
+              <div style="flex:1;min-width:0;">
+                <div class="convo-name">Rachel Kim</div>
+                <div class="convo-preview">"Can I get a trade appraisal?"</div>
+              </div>
+              <span class="convo-badge" style="background:var(--teal);"></span>
+              <div class="convo-time">2 hr</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Col 2: Active console -->
+      <div class="s3-col">
+        <div class="panel" style="border-top:2px solid var(--lime);">
+          <div class="panel-header">
+            <span class="panel-title">Active — Sarah Chen</span>
+            <span class="badge b-lime">Objection Engine</span>
+          </div>
+          <div class="panel-body" style="display:flex;flex-direction:column;gap:6px;">
+            <div style="background:#1b2835;border-radius:8px;padding:10px 12px;border-left:3px solid rgba(255,255,255,0.1);font-size:12px;color:var(--white);line-height:1.5;">"This isn't really a priority right now."</div>
+            <div class="resp-good">
+              <div class="resp-good-label">Guided Response</div>
+              <div class="resp-good-text" style="font-size:11.5px;">"Totally fair. Most teams think that until they see how many conversations die after the first reply. If we could show you that pattern in 10 minutes Monday — worth a quick look?"</div>
+              <div class="resp-tags" style="margin-top:6px;">
+                <span class="resp-tag">Binary Ask</span>
+                <span class="resp-tag">Redirect</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="nba">
+          <div class="nba-label">Next Best Action</div>
+          <div class="nba-action">Send objection redirect. Ask for Monday slot.</div>
+          <div class="nba-why">Engine confidence: 94% — Priority objection redirect highest conversion path given conversation stage.</div>
+          <button class="nba-btn">Review &amp; Send →</button>
+        </div>
+        <!-- Engine status -->
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">Engine Status</span>
+          </div>
+          <div class="panel-body" style="display:flex;flex-direction:column;gap:5px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;"><span style="font-size:10.5px;color:var(--w60);">Objection Engine</span><span class="badge b-lime">ACTIVE</span></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;"><span style="font-size:10.5px;color:var(--w40);">Appointment Engine</span><span style="font-size:8px;color:var(--w20);">standby</span></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;"><span style="font-size:10.5px;color:var(--w40);">Follow-Up Engine</span><span class="badge b-amber">2 QUEUED</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Col 3: Follow-up queue -->
+      <div class="s3-col">
+        <div class="panel" style="flex:1;display:flex;flex-direction:column;">
+          <div class="panel-header">
+            <span class="panel-title">Follow-Up Queue</span>
+            <span class="badge b-amber">5 Pending</span>
+          </div>
+          <div class="panel-body scroll-inner" style="flex:1;display:flex;flex-direction:column;gap:6px;">
+            <div class="queue-item">
+              <div class="qi-avatar" style="background:linear-gradient(135deg,var(--red),#b91c1c);">D</div>
+              <div style="flex:1;min-width:0;"><div class="qi-name">David Park</div><div class="qi-type">Tier 1 · No reply 48hr</div></div>
+              <div class="qi-due" style="background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.2);">Overdue</div>
+            </div>
+            <div class="queue-item">
+              <div class="qi-avatar" style="background:linear-gradient(135deg,var(--amber),#b45309);">T</div>
+              <div style="flex:1;min-width:0;"><div class="qi-name">Tom Walsh</div><div class="qi-type">Tier 2 · Recovery</div></div>
+              <div class="qi-due" style="background:rgba(251,191,36,0.1);color:var(--amber);border:1px solid rgba(251,191,36,0.2);">Today</div>
+            </div>
+            <div class="queue-item">
+              <div class="qi-avatar" style="background:linear-gradient(135deg,var(--teal),#0ea5e9);">A</div>
+              <div style="flex:1;min-width:0;"><div class="qi-name">Amy Foster</div><div class="qi-type">Tier 1 · 24hr window</div></div>
+              <div class="qi-due" style="background:rgba(200,224,50,0.1);color:var(--lime);border:1px solid rgba(200,224,50,0.2);">3 hr</div>
+            </div>
+            <div class="queue-item">
+              <div class="qi-avatar" style="background:linear-gradient(135deg,var(--purple),#6d28d9);">C</div>
+              <div style="flex:1;min-width:0;"><div class="qi-name">Carlos Reyes</div><div class="qi-type">Appointment Confirm</div></div>
+              <div class="qi-due" style="background:rgba(200,224,50,0.1);color:var(--lime);border:1px solid rgba(200,224,50,0.2);">Tomorrow</div>
+            </div>
+            <div class="queue-item" style="opacity:0.5;">
+              <div class="qi-avatar" style="background:var(--w08);">+</div>
+              <div style="flex:1;min-width:0;"><div class="qi-name" style="color:var(--w40);">4 more scheduled</div><div class="qi-type">Auto-queued by system</div></div>
+            </div>
+          </div>
+        </div>
+        <!-- Rep stats -->
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">Today's Execution</span></div>
+          <div class="panel-body" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div style="text-align:center;padding:8px;background:var(--w04);border-radius:7px;">
+              <div style="font-size:20px;font-weight:900;color:var(--teal);">98<span style="font-size:10px;">%</span></div>
+              <div style="font-size:8px;color:var(--w40);margin-top:1px;">Response Rate</div>
+            </div>
+            <div style="text-align:center;padding:8px;background:var(--w04);border-radius:7px;">
+              <div style="font-size:20px;font-weight:900;color:var(--lime);">1:42</div>
+              <div style="font-size:8px;color:var(--w40);margin-top:1px;">Avg Response</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 4 — MANAGER INTELLIGENCE DASHBOARD
+══════════════════════════════════════════════ -->
+<div class="slide" data-slide="4">
+  <div class="slide-header">
+    <div class="slide-header-left">
+      <div class="logo">YENES <span>·</span> Oper8er</div>
+      <span class="slide-tag">Manager Intelligence</span>
+    </div>
+    <div class="slide-title-bar">04 — Management Dashboard</div>
+  </div>
+  <div class="slide-body">
+    <div class="slide-heading">
+      <div class="slide-heading-left">
+        <div class="label">Manager-Facing Intelligence</div>
+        <div class="slide-h1">Pipeline visibility. <em>Execution data.</em></div>
+        <div class="slide-sub">The buyer's interface. Managers see deal health scores, rep performance rankings, risk alerts — all derived from behavioral execution data, not rep-reported status.</div>
+      </div>
+    </div>
+    <div class="s4-grid" style="flex:1;min-height:0;">
+      <!-- Col 1: Deal Momentum -->
+      <div class="s4-col">
+        <div class="panel" style="flex:1;display:flex;flex-direction:column;">
+          <div class="panel-header">
+            <span class="panel-title">Deal Momentum Scores</span>
+            <span class="badge b-teal">Live</span>
+          </div>
+          <div class="panel-body scroll-inner" style="flex:1;display:flex;flex-direction:column;gap:6px;">
+            <div class="deal-row dr-healthy">
+              <div class="dr-name">
+                <div class="dr-pname">Mike Brennan · F-150</div>
+                <div class="dr-signal">Fast response ✓ · Appt confirmed ✓ · CRM complete ✓</div>
+              </div>
+              <span class="badge b-green">Healthy</span>
+              <div class="dr-score">91</div>
+            </div>
+            <div class="deal-row dr-healthy">
+              <div class="dr-name">
+                <div class="dr-pname">Rachel Kim · Lease Inquiry</div>
+                <div class="dr-signal">Appt set ✓ · Trade intake complete ✓</div>
+              </div>
+              <span class="badge b-green">Healthy</span>
+              <div class="dr-score">84</div>
+            </div>
+            <div class="deal-row dr-risk">
+              <div class="dr-name">
+                <div class="dr-pname">Sarah Chen · Priority Objection</div>
+                <div class="dr-signal">Objection handled ✓ · Appt pending ⚠</div>
+              </div>
+              <span class="badge b-amber">At Risk</span>
+              <div class="dr-score">78</div>
+            </div>
+            <div class="deal-row dr-risk">
+              <div class="dr-name">
+                <div class="dr-pname">Jessica Torres · Explorer XLT</div>
+                <div class="dr-signal">Follow-up Tier 2 ✓ · Price request pending ⚠</div>
+              </div>
+              <span class="badge b-amber">At Risk</span>
+              <div class="dr-score">62</div>
+            </div>
+            <div class="deal-row dr-crit">
+              <div class="dr-name">
+                <div class="dr-pname">David Park · Explorer</div>
+                <div class="dr-signal">Response delay ✗ · No follow-up 48hr ✗ · CRM incomplete ✗</div>
+              </div>
+              <span class="badge b-red">Critical</span>
+              <div class="dr-score">31</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Col 2: Rep Rankings -->
+      <div class="s4-col">
+        <div class="panel" style="flex:1;display:flex;flex-direction:column;">
+          <div class="panel-header">
+            <span class="panel-title">Rep Execution Rankings</span>
+            <span class="badge b-purple">This Month</span>
+          </div>
+          <div class="panel-body scroll-inner" style="flex:1;display:flex;flex-direction:column;gap:5px;">
+            <div class="rep-row" style="background:rgba(200,224,50,0.04);border:1px solid rgba(200,224,50,0.1);">
+              <div class="rep-rank">#1</div>
+              <div class="rep-avatar" style="background:linear-gradient(135deg,var(--lime),#65a30d);">J</div>
+              <div style="flex:1;min-width:0;">
+                <div class="rep-name">Jake M.</div>
+                <div class="rep-bar-wrap" style="margin-top:3px;"><div class="rep-bar" style="width:96%;background:var(--lime);"></div></div>
+              </div>
+              <div class="rep-score-wrap">
+                <div class="rep-score" style="color:var(--lime);">96</div>
+                <div class="rep-label">Exec Score</div>
+              </div>
+            </div>
+            <div class="rep-row">
+              <div class="rep-rank">#2</div>
+              <div class="rep-avatar" style="background:linear-gradient(135deg,var(--teal),#0ea5e9);">A</div>
+              <div style="flex:1;min-width:0;">
+                <div class="rep-name">Amy F.</div>
+                <div class="rep-bar-wrap" style="margin-top:3px;"><div class="rep-bar" style="width:88%;"></div></div>
+              </div>
+              <div class="rep-score-wrap"><div class="rep-score" style="color:var(--teal);">88</div><div class="rep-label">Exec Score</div></div>
+            </div>
+            <div class="rep-row">
+              <div class="rep-rank">#3</div>
+              <div class="rep-avatar" style="background:linear-gradient(135deg,var(--purple),#6d28d9);">C</div>
+              <div style="flex:1;min-width:0;">
+                <div class="rep-name">Carlos R.</div>
+                <div class="rep-bar-wrap" style="margin-top:3px;"><div class="rep-bar" style="width:74%;"></div></div>
+              </div>
+              <div class="rep-score-wrap"><div class="rep-score" style="color:var(--purple);">74</div><div class="rep-label">Exec Score</div></div>
+            </div>
+            <div class="rep-row">
+              <div class="rep-rank">#4</div>
+              <div class="rep-avatar" style="background:linear-gradient(135deg,var(--amber),#b45309);">T</div>
+              <div style="flex:1;min-width:0;">
+                <div class="rep-name">Tom W.</div>
+                <div class="rep-bar-wrap" style="margin-top:3px;"><div class="rep-bar" style="width:61%;background:var(--amber);"></div></div>
+              </div>
+              <div class="rep-score-wrap"><div class="rep-score" style="color:var(--amber);">61</div><div class="rep-label">Exec Score</div></div>
+            </div>
+            <div class="rep-row" style="background:rgba(239,68,68,0.04);border:1px solid rgba(239,68,68,0.1);">
+              <div class="rep-rank">#5</div>
+              <div class="rep-avatar" style="background:linear-gradient(135deg,var(--red),#b91c1c);">D</div>
+              <div style="flex:1;min-width:0;">
+                <div class="rep-name">Dave P.</div>
+                <div class="rep-bar-wrap" style="margin-top:3px;"><div class="rep-bar" style="width:38%;background:var(--red);"></div></div>
+              </div>
+              <div class="rep-score-wrap"><div class="rep-score" style="color:var(--red);">38</div><div class="rep-label">Exec Score</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Col 3: Risk Alerts + Pipeline -->
+      <div class="s4-col">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">Deal Risk Alerts</span>
+            <span class="badge b-red">2 Critical</span>
+          </div>
+          <div class="panel-body" style="display:flex;flex-direction:column;gap:6px;">
+            <div class="alert-item alert-crit">
+              <div class="alert-dot" style="background:var(--red);"></div>
+              <div class="alert-text"><strong>David Park</strong> — No follow-up in 48hrs. Response time was 4.5hr. Deal score: 31.</div>
+              <div class="alert-time">2 hr ago</div>
+            </div>
+            <div class="alert-item alert-warn">
+              <div class="alert-dot" style="background:var(--amber);"></div>
+              <div class="alert-text"><strong>Tom Walsh</strong> — Price objection met with discount offer. No appointment redirect attempted.</div>
+              <div class="alert-time">5 hr ago</div>
+            </div>
+            <div class="alert-item alert-info">
+              <div class="alert-dot" style="background:var(--teal);"></div>
+              <div class="alert-text"><strong>Sarah Chen</strong> — Objection handled correctly. Awaiting appointment confirmation.</div>
+              <div class="alert-time">14 min ago</div>
+            </div>
+          </div>
+        </div>
+        <!-- Pipeline summary -->
+        <div class="panel" style="flex:1;">
+          <div class="panel-header"><span class="panel-title">Pipeline Health</span></div>
+          <div class="panel-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px;">
+              <div style="text-align:center;padding:8px 4px;background:rgba(34,197,94,0.05);border:1px solid rgba(34,197,94,0.1);border-radius:7px;">
+                <div style="font-size:20px;font-weight:900;color:var(--green);">8</div>
+                <div style="font-size:7.5px;color:var(--w40);margin-top:1px;text-transform:uppercase;letter-spacing:0.5px;">Healthy</div>
+              </div>
+              <div style="text-align:center;padding:8px 4px;background:rgba(251,191,36,0.05);border:1px solid rgba(251,191,36,0.1);border-radius:7px;">
+                <div style="font-size:20px;font-weight:900;color:var(--amber);">5</div>
+                <div style="font-size:7.5px;color:var(--w40);margin-top:1px;text-transform:uppercase;letter-spacing:0.5px;">At Risk</div>
+              </div>
+              <div style="text-align:center;padding:8px 4px;background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.1);border-radius:7px;">
+                <div style="font-size:20px;font-weight:900;color:var(--red);">2</div>
+                <div style="font-size:7.5px;color:var(--w40);margin-top:1px;text-transform:uppercase;letter-spacing:0.5px;">Critical</div>
+              </div>
+            </div>
+            <div style="font-size:9.5px;color:var(--w40);line-height:1.55;">Scores derived from execution signals — response time, follow-up compliance, CRM completeness, objection handling. Not rep-reported.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 5 — DEAL AUTOPSY
+══════════════════════════════════════════════ -->
+<div class="slide" data-slide="5">
+  <div class="slide-header">
+    <div class="slide-header-left">
+      <div class="logo">YENES <span>·</span> Oper8er</div>
+      <span class="slide-tag">Deal Autopsy Engine</span>
+    </div>
+    <div class="slide-title-bar">05 — Failure Diagnostics</div>
+  </div>
+  <div class="slide-body">
+    <div class="slide-heading">
+      <div class="slide-heading-left">
+        <div class="label">Deal Autopsy Engine</div>
+        <div class="slide-h1">When a deal dies, <em>the system knows why.</em></div>
+        <div class="slide-sub">Rep-reported reason: "Customer decided to wait." Actual root cause: three measurable execution failures that happened before the deal ever had a chance.</div>
+      </div>
+    </div>
+    <div class="s5-grid">
+      <div class="s5-left">
+        <div class="autopsy-header">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <div class="autopsy-deal-name">Lost Deal: David Park · 2023 Explorer XLT</div>
+            <span class="badge b-red">Lost</span>
+          </div>
+          <div class="autopsy-meta">
+            <div class="autopsy-meta-item"><span style="color:var(--red);">▸</span> Rep-reported: "Customer decided to wait"</div>
+            <div class="autopsy-meta-item"><span style="color:var(--teal);">▸</span> Avg deal value: $3,800 gross</div>
+            <div class="autopsy-meta-item"><span style="color:var(--w20);">▸</span> Total duration: 9 days</div>
+          </div>
+        </div>
+        <!-- Timeline -->
+        <div class="panel" style="flex:1;">
+          <div class="panel-header">
+            <span class="panel-title">Execution Timeline</span>
+            <span class="badge b-red">3 Failures Identified</span>
+          </div>
+          <div class="panel-body">
+            <div class="timeline">
+              <div class="tl-event">
+                <div class="tl-dot tl-ok"></div>
+                <div class="tl-time">Day 1 · 9:12am</div>
+                <div class="tl-text">Lead arrived via web inquiry form. Entered rep queue.</div>
+              </div>
+              <div class="tl-event">
+                <div class="tl-dot tl-warn"></div>
+                <div class="tl-time">Day 1 · 1:47pm</div>
+                <div class="tl-text"><span class="tl-fail-text">Failure 1 — 4hr 35min response delay.</span> Lead contacted well outside 5-minute conversion window. Competitor likely contacted lead in this window.</div>
+              </div>
+              <div class="tl-event">
+                <div class="tl-dot tl-warn"></div>
+                <div class="tl-time">Day 1 · 2:04pm</div>
+                <div class="tl-text">Customer asked about pricing. <span class="tl-fail-text">Failure 2 — Rep volunteered $800 discount instead of redirecting to appointment.</span> Margin eroded, deal not advanced.</div>
+              </div>
+              <div class="tl-event">
+                <div class="tl-dot tl-fail"></div>
+                <div class="tl-time">Day 3 · —</div>
+                <div class="tl-text"><span class="tl-fail-text">Failure 3 — No follow-up sent.</span> 48-hour window missed. Lead went silent. No recovery sequence initiated.</div>
+              </div>
+              <div class="tl-event">
+                <div class="tl-dot tl-fail"></div>
+                <div class="tl-time">Day 9 · —</div>
+                <div class="tl-text">Deal marked lost. Rep reported: "Customer decided to wait." All three execution failures invisible in CRM.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="root-cause">
+          <div class="root-label">Root Cause — Identified</div>
+          <div class="root-text">Execution failure at 3 measurable points. None were visible in CRM notes. Rep reported external reason. Without the autopsy, the same pattern repeats with the next 5 leads this rep works.</div>
+        </div>
+      </div>
+
+      <div class="s5-right">
+        <!-- Failure breakdown -->
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">Organizational Failure Patterns</span>
+            <span class="badge b-teal">30-Day Audit</span>
+          </div>
+          <div class="panel-body">
+            <div class="failure-bar-row">
+              <div class="failure-bar-label">Lost deals — no 48hr follow-up<span>40%</span></div>
+              <div class="failure-bar-track"><div class="failure-bar-fill" style="width:40%;"></div></div>
+            </div>
+            <div class="failure-bar-row">
+              <div class="failure-bar-label">Died after response delay &gt;4hr<span>23%</span></div>
+              <div class="failure-bar-track"><div class="failure-bar-fill" style="width:23%;"></div></div>
+            </div>
+            <div class="failure-bar-row">
+              <div class="failure-bar-label">Died after objection mishandled<span>18%</span></div>
+              <div class="failure-bar-track"><div class="failure-bar-fill" style="width:18%;"></div></div>
+            </div>
+            <div class="failure-bar-row">
+              <div class="failure-bar-label">CRM note incomplete at loss<span>61%</span></div>
+              <div class="failure-bar-track"><div class="failure-bar-fill" style="width:61%;"></div></div>
+            </div>
+            <div style="margin-top:6px;font-size:9.5px;color:var(--w40);font-style:italic;">From 1,126-interaction audit — Teton Motors, WY</div>
+          </div>
+        </div>
+
+        <!-- Before/After -->
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">What This Deal Needed</span>
+          </div>
+          <div class="panel-body" style="display:flex;flex-direction:column;gap:6px;">
+            <div style="padding:8px 10px;background:rgba(239,68,68,0.04);border-radius:7px;border-left:2px solid rgba(239,68,68,0.3);">
+              <div style="font-size:8.5px;font-weight:700;color:var(--red);margin-bottom:3px;text-transform:uppercase;letter-spacing:1px;">What happened</div>
+              <div style="font-size:11px;color:var(--w40);">4.5hr response → discount offered → no follow-up → marked lost</div>
+            </div>
+            <div style="padding:8px 10px;background:rgba(0,212,200,0.04);border-radius:7px;border-left:2px solid rgba(0,212,200,0.25);">
+              <div style="font-size:8.5px;font-weight:700;color:var(--teal);margin-bottom:3px;text-transform:uppercase;letter-spacing:1px;">With Oper8er</div>
+              <div style="font-size:11px;color:var(--w60);">58s response → objection redirect → follow-up queued → appointment sought</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recover note -->
+        <div style="padding:16px 18px;background:rgba(200,224,50,0.05);border:1px solid rgba(200,224,50,0.15);border-radius:10px;">
+          <div style="font-size:11px;font-weight:800;color:var(--lime);margin-bottom:6px;">The Pattern, Not the Deal</div>
+          <div style="font-size:11px;color:var(--w40);line-height:1.6;">Autopsy doesn't recover this deal. It prevents the same failure from occurring across the next 50 leads this rep works this month.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 6 — BENCHMARK NETWORK
+══════════════════════════════════════════════ -->
+<div class="slide" data-slide="6">
+  <div class="slide-header">
+    <div class="slide-header-left">
+      <div class="logo">YENES <span>·</span> Oper8er</div>
+      <span class="slide-tag">Benchmark Network</span>
+    </div>
+    <div class="slide-title-bar">06 — Execution Intelligence Network</div>
+  </div>
+  <div class="slide-body">
+    <div class="slide-heading">
+      <div class="slide-heading-left">
+        <div class="label">Execution Benchmark Network</div>
+        <div class="slide-h1">See how your team compares. <em>To every team.</em></div>
+        <div class="slide-sub">Anonymized execution telemetry across all Oper8er deployments creates industry benchmarks that no competitor can produce. Competitive urgency that no feature list can replicate.</div>
+      </div>
+    </div>
+    <div class="s6-grid">
+      <div class="s6-left">
+        <!-- Response time benchmark -->
+        <div class="bench-metric">
+          <div class="bench-metric-title">Response Time Comparison</div>
+          <div class="bench-bars">
+            <div class="bench-bar-row">
+              <div class="bench-bar-label" style="color:var(--teal);">Your Store</div>
+              <div class="bench-bar-track"><div class="bench-bar-yours" style="width:92%;background:var(--teal);"></div></div>
+              <div class="bench-bar-val" style="color:var(--teal);">58 sec</div>
+            </div>
+            <div class="bench-bar-row">
+              <div class="bench-bar-label" style="color:var(--w40);">Market Average</div>
+              <div class="bench-bar-track"><div class="bench-bar-yours" style="width:34%;background:rgba(255,255,255,0.2);"></div></div>
+              <div class="bench-bar-val" style="color:var(--w40);">6m 40s</div>
+            </div>
+            <div class="bench-bar-row">
+              <div class="bench-bar-label" style="color:var(--lime);">Top 10%</div>
+              <div class="bench-bar-track"><div class="bench-bar-yours" style="width:98%;background:var(--lime);"></div></div>
+              <div class="bench-bar-val" style="color:var(--lime);">48 sec</div>
+            </div>
+          </div>
+        </div>
+        <!-- Follow-up benchmark -->
+        <div class="bench-metric">
+          <div class="bench-metric-title">Follow-Up Compliance</div>
+          <div class="bench-bars">
+            <div class="bench-bar-row">
+              <div class="bench-bar-label" style="color:var(--teal);">Your Store</div>
+              <div class="bench-bar-track"><div class="bench-bar-yours" style="width:82%;background:var(--teal);"></div></div>
+              <div class="bench-bar-val" style="color:var(--teal);">82%</div>
+            </div>
+            <div class="bench-bar-row">
+              <div class="bench-bar-label" style="color:var(--w40);">Market Average</div>
+              <div class="bench-bar-track"><div class="bench-bar-yours" style="width:56%;background:rgba(255,255,255,0.2);"></div></div>
+              <div class="bench-bar-val" style="color:var(--w40);">56%</div>
+            </div>
+            <div class="bench-bar-row">
+              <div class="bench-bar-label" style="color:var(--lime);">Top Operators</div>
+              <div class="bench-bar-track"><div class="bench-bar-yours" style="width:91%;background:var(--lime);"></div></div>
+              <div class="bench-bar-val" style="color:var(--lime);">91%</div>
+            </div>
+          </div>
+        </div>
+        <!-- Appointment benchmark -->
+        <div class="bench-metric">
+          <div class="bench-metric-title">Appointment Conversion Rate</div>
+          <div class="bench-bars">
+            <div class="bench-bar-row">
+              <div class="bench-bar-label" style="color:var(--teal);">Your Store</div>
+              <div class="bench-bar-track"><div class="bench-bar-yours" style="width:77%;background:var(--teal);"></div></div>
+              <div class="bench-bar-val" style="color:var(--teal);">24%</div>
+            </div>
+            <div class="bench-bar-row">
+              <div class="bench-bar-label" style="color:var(--w40);">Market Average</div>
+              <div class="bench-bar-track"><div class="bench-bar-yours" style="width:58%;background:rgba(255,255,255,0.2);"></div></div>
+              <div class="bench-bar-val" style="color:var(--w40);">18%</div>
+            </div>
+            <div class="bench-bar-row">
+              <div class="bench-bar-label" style="color:var(--lime);">Top Performers</div>
+              <div class="bench-bar-track"><div class="bench-bar-yours" style="width:100%;background:var(--lime);"></div></div>
+              <div class="bench-bar-val" style="color:var(--lime);">31%</div>
+            </div>
+          </div>
+          <div class="bench-legend">
+            <div class="bl-item"><div class="bl-dot" style="background:var(--teal);"></div>Your Store</div>
+            <div class="bl-item"><div class="bl-dot" style="background:rgba(255,255,255,0.25);"></div>Market Avg</div>
+            <div class="bl-item"><div class="bl-dot" style="background:var(--lime);"></div>Top Performers</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="s6-right">
+        <div class="network-card">
+          <div class="network-title">Execution Intelligence Network</div>
+          <div class="network-desc">Every deployment generates structured execution telemetry. Aggregated anonymously across all stores, it produces industry benchmarks that no CRM or analytics tool can replicate — because no other system occupies the execution layer where this data is generated.</div>
+          <div class="network-stats">
+            <div class="net-stat">
+              <div class="net-stat-val">1,126</div>
+              <div class="net-stat-label">Interactions Audited</div>
+            </div>
+            <div class="net-stat">
+              <div class="net-stat-val">30</div>
+              <div class="net-stat-label">Day Live Deployment</div>
+            </div>
+            <div class="net-stat">
+              <div class="net-stat-val">100%</div>
+              <div class="net-stat-label">Execution Captured</div>
+            </div>
+            <div class="net-stat">
+              <div class="net-stat-val">5</div>
+              <div class="net-stat-label">Engine Protocols</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">Why Benchmarks Create Lock-In</span></div>
+          <div class="panel-body" style="display:flex;flex-direction:column;gap:7px;">
+            <div style="padding:8px 10px;background:rgba(0,212,200,0.04);border-radius:7px;border-left:2px solid rgba(0,212,200,0.2);">
+              <div style="font-size:10.5px;color:var(--w60);line-height:1.5;">Canceling Oper8er means losing visibility into how your execution compares to every competitor in your market.</div>
+            </div>
+            <div style="padding:8px 10px;background:rgba(200,224,50,0.04);border-radius:7px;border-left:2px solid rgba(200,224,50,0.2);">
+              <div style="font-size:10.5px;color:var(--w60);line-height:1.5;">The benchmark data only exists inside the network. It deepens with every deployment added.</div>
+            </div>
+            <div style="padding:8px 10px;background:rgba(167,139,250,0.04);border-radius:7px;border-left:2px solid rgba(167,139,250,0.2);">
+              <div style="font-size:10.5px;color:var(--w60);line-height:1.5;">Cross-industry dataset coming: same execution intelligence across Automotive, Solar, Insurance, Real Estate.</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="padding:16px 18px;background:var(--navy-card);border:1px solid rgba(200,224,50,0.15);border-radius:10px;text-align:center;">
+          <div style="font-size:11px;color:var(--w40);margin-bottom:10px;">Ready to see your execution data?</div>
+          <div style="font-size:14px;font-weight:800;color:var(--lime);margin-bottom:14px;">30-Day Execution Audit — Free</div>
+          <div style="background:var(--lime);color:#0a0f0a;border-radius:8px;padding:10px 24px;font-size:12px;font-weight:800;cursor:pointer;display:inline-block;">Start Your Free Audit →</div>
+          <div style="font-size:9.5px;color:var(--w20);margin-top:8px;">No cost · No commitment · No changes required</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── NAV BAR ─────────────────────────────────────────── -->
+<div id="nav-bar">
+  <div class="nav-dots" id="dots"></div>
+  <div class="slide-counter" id="counter">01 / 06</div>
+  <div class="nav-btns">
+    <button class="nav-btn" id="btn-prev">← Prev</button>
+    <button class="nav-btn primary" id="btn-next">Next →</button>
+  </div>
+</div>
+
+</div><!-- #pres -->
+
+<script>
+(function(){
+  var slides = document.querySelectorAll('.slide');
+  var dots = document.getElementById('dots');
+  var counter = document.getElementById('counter');
+  var btnPrev = document.getElementById('btn-prev');
+  var btnNext = document.getElementById('btn-next');
+  var total = slides.length;
+  var current = 0;
+
+  // Build dots
+  for(var i = 0; i < total; i++){
+    var d = document.createElement('div');
+    d.className = 'nav-dot' + (i === 0 ? ' active' : '');
+    d.dataset.i = i;
+    d.addEventListener('click', (function(idx){ return function(){ goTo(idx); }; })(i));
+    dots.appendChild(d);
+  }
+
+  function goTo(n){
+    if(n < 0 || n >= total || n === current) return;
+    slides[current].classList.remove('active');
+    slides[current].classList.add('exit');
+    var prev = current;
+    current = n;
+    slides[current].classList.add('active');
+    setTimeout(function(){ slides[prev].classList.remove('exit'); }, 420);
+
+    // Update dots
+    var allDots = dots.querySelectorAll('.nav-dot');
+    allDots.forEach(function(d){ d.classList.remove('active'); });
+    allDots[current].classList.add('active');
+
+    // Update counter
+    var num = String(current + 1).padStart(2, '0');
+    var tot = String(total).padStart(2, '0');
+    counter.textContent = num + ' / ' + tot;
+
+    // Update nav buttons
+    btnPrev.style.opacity = current === 0 ? '0.35' : '1';
+    btnNext.textContent = current === total - 1 ? 'Restart' : 'Next →';
+  }
+
+  btnPrev.addEventListener('click', function(){ goTo(current - 1); });
+  btnNext.addEventListener('click', function(){
+    if(current === total - 1){ goTo(0); } else { goTo(current + 1); }
+  });
+
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' '){
+      e.preventDefault();
+      if(current === total - 1){ goTo(0); } else { goTo(current + 1); }
+    }
+    if(e.key === 'ArrowLeft' || e.key === 'ArrowUp'){
+      e.preventDefault();
+      goTo(current - 1);
+    }
+  });
+
+  // Init
+  btnPrev.style.opacity = '0.35';
+})();
+</script>
+</body>
+</html>
